@@ -1,4 +1,4 @@
-import { useSecurityLogs, useUsers } from "@/hooks/use-condominium";
+import { useSecurityLogs, useUsers, useUpdateSecurityLog, useCreateSecurityLog } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,62 @@ import { ShieldAlert, AlertTriangle, Plus, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { motion } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertSecurityLogSchema, type InsertSecurityLog } from "@shared/schema";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Seguranca() {
   const { data: logs, isLoading } = useSecurityLogs();
   const { data: users } = useUsers();
   const { user } = useAuth();
+  const createLog = useCreateSecurityLog();
+  const updateLog = useUpdateSecurityLog();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const isAdmin = user?.role === "admin";
+
+  const form = useForm<InsertSecurityLog>({
+    resolver: zodResolver(insertSecurityLogSchema),
+    defaultValues: {
+      reportedBy: user?.id,
+      description: "",
+      status: "open",
+    },
+  });
+
+  const onSubmit = (data: InsertSecurityLog) => {
+    createLog.mutate({ ...data, reportedBy: user?.id }, {
+      onSuccess: () => {
+        toast({ title: "Sucesso", description: "Ocorrência reportada." });
+        setOpen(false);
+        form.reset();
+      },
+    });
+  };
+
+  const handleResolve = (id: number) => {
+    updateLog.mutate({ id, status: "resolved" }, {
+      onSuccess: () => toast({ title: "Sucesso", description: "Ocorrência marcada como resolvida." }),
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -24,9 +74,36 @@ export function Seguranca() {
           </h1>
           <p className="text-muted-foreground mt-1">Registo de incidentes e alertas de segurança.</p>
         </div>
-        <Button className="shadow-lg shadow-primary/20 bg-rose-600 hover:bg-rose-700 text-white">
-          <Plus className="w-4 h-4 mr-2" /> Reportar Ocorrência
-        </Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="shadow-lg shadow-primary/20 bg-rose-600 hover:bg-rose-700 text-white">
+              <Plus className="w-4 h-4 mr-2" /> Reportar Ocorrência
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reportar Nova Ocorrência</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição do Incidente</FormLabel>
+                      <FormControl><Textarea placeholder="Descreva o que aconteceu..." {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-700 text-white" disabled={createLog.isPending}>
+                  {createLog.isPending ? "A enviar..." : "Enviar Alerta"}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="space-y-4">
@@ -57,7 +134,12 @@ export function Seguranca() {
                 </div>
 
                 {isAdmin && isOpen && (
-                  <Button variant="outline" className="shrink-0 border-rose-200 text-rose-600 hover:bg-rose-50">
+                  <Button 
+                    variant="outline" 
+                    className="shrink-0 border-rose-200 text-rose-600 hover:bg-rose-50"
+                    onClick={() => handleResolve(log.id)}
+                    disabled={updateLog.isPending}
+                  >
                     Marcar Resolvido
                   </Button>
                 )}

@@ -1,4 +1,4 @@
-import { useReservations, useUsers, useUpdateReservation } from "@/hooks/use-condominium";
+import { useReservations, useUsers, useUpdateReservation, useCreateReservation } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,27 @@ import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertReservationSchema, type InsertReservation } from "@shared/schema";
+import { useState } from "react";
 
 const AREA_LABELS: Record<string, string> = {
   pool: "Piscina",
@@ -20,8 +41,30 @@ export function Reservas() {
   const { data: users } = useUsers();
   const { user } = useAuth();
   const { mutate: updateRes, isPending } = useUpdateReservation();
+  const createRes = useCreateReservation();
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const isAdmin = user?.role === "admin";
+
+  const form = useForm<InsertReservation>({
+    resolver: zodResolver(insertReservationSchema),
+    defaultValues: {
+      userId: user?.id,
+      area: "pool",
+      status: "pending",
+      date: new Date(),
+    },
+  });
+
+  const onSubmit = (data: InsertReservation) => {
+    createRes.mutate({ ...data, userId: user?.id }, {
+      onSuccess: () => {
+        toast({ title: "Sucesso", description: "Reserva solicitada com sucesso." });
+        setOpen(false);
+        form.reset();
+      },
+    });
+  };
 
   const displayedReservations = isAdmin 
     ? reservations 
@@ -43,9 +86,60 @@ export function Reservas() {
           </p>
         </div>
         {!isAdmin && (
-          <Button className="shadow-lg shadow-primary/20">
-            <Plus className="w-4 h-4 mr-2" /> Nova Reserva
-          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="shadow-lg shadow-primary/20">
+                <Plus className="w-4 h-4 mr-2" /> Nova Reserva
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Solicitar Reserva</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="area"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Área Comum</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a área" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pool">Piscina</SelectItem>
+                            <SelectItem value="gym">Ginásio</SelectItem>
+                            <SelectItem value="party_room">Salão de Festas</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" onChange={(e) => field.onChange(new Date(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createRes.isPending}>
+                    {createRes.isPending ? "A processar..." : "Solicitar Reserva"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 

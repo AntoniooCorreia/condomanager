@@ -7,11 +7,56 @@ import { HardHat, Plus, Calendar as CalendarIcon, DollarSign } from "lucide-reac
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertWorkSchema, type InsertWork } from "@shared/schema";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Obras() {
   const { data: works, isLoading } = useWorks();
+  const createWork = useCreateWork();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const isAdmin = user?.role === "admin";
+
+  const form = useForm<InsertWork>({
+    resolver: zodResolver(insertWorkSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      status: "planning",
+      cost: "0",
+    },
+  });
+
+  const onSubmit = (data: InsertWork) => {
+    createWork.mutate(data, {
+      onSuccess: () => {
+        toast({ title: "Sucesso", description: "Obra registada com sucesso." });
+        setOpen(false);
+        form.reset();
+      },
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -30,9 +75,58 @@ export function Obras() {
           <p className="text-muted-foreground mt-1">Acompanhe as intervenções no edifício.</p>
         </div>
         {isAdmin && (
-          <Button className="shadow-lg shadow-primary/20">
-            <Plus className="w-4 h-4 mr-2" /> Nova Obra
-          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="shadow-lg shadow-primary/20">
+                <Plus className="w-4 h-4 mr-2" /> Nova Obra
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Registar Nova Obra</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl><Textarea {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custo Estimado (€)</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createWork.isPending}>
+                    {createWork.isPending ? "A guardar..." : "Guardar Obra"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 

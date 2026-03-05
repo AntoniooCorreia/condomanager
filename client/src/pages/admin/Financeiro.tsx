@@ -1,4 +1,4 @@
-import { usePayments, useUsers, useUpdatePayment } from "@/hooks/use-condominium";
+import { usePayments, useUsers, useUpdatePayment, useCreatePayment } from "@/hooks/use-condominium";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { Card } from "@/components/ui/card";
@@ -7,15 +7,59 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertPaymentSchema, type InsertPayment } from "@shared/schema";
+import { useState } from "react";
 
 export function Financeiro() {
   const { data: payments, isLoading } = usePayments();
   const { data: users } = useUsers();
   const { mutate: updatePayment, isPending } = useUpdatePayment();
+  const createPayment = useCreatePayment();
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const form = useForm<InsertPayment>({
+    resolver: zodResolver(insertPaymentSchema),
+    defaultValues: {
+      userId: 0,
+      description: "",
+      amount: "0",
+      status: "pending",
+      dueDate: new Date(),
+    },
+  });
+
+  const onSubmit = (data: InsertPayment) => {
+    createPayment.mutate(data, {
+      onSuccess: () => {
+        toast({ title: "Sucesso", description: "Aviso de pagamento criado." });
+        setOpen(false);
+        form.reset();
+      },
+    });
+  };
 
   const handleMarkPaid = (id: number) => {
     updatePayment({ id, status: 'paid' }, {
@@ -43,7 +87,80 @@ export function Financeiro() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="bg-white">Exportar</Button>
-          <Button className="shadow-lg shadow-primary/20">Novo Aviso</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="shadow-lg shadow-primary/20">Novo Aviso</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Novo Aviso de Pagamento</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="userId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Condómino</FormLabel>
+                        <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o condómino" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {users?.filter(u => u.role === 'user').map(u => (
+                              <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl><Input placeholder="Ex: Quota Mensal - Junho" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Valor (€)</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data Limite</FormLabel>
+                        <FormControl>
+                          <Input type="date" onChange={(e) => field.onChange(new Date(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createPayment.isPending}>
+                    {createPayment.isPending ? "A criar..." : "Criar Aviso"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

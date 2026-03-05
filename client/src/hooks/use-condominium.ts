@@ -38,9 +38,19 @@ export function useUpdatePayment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      // Mock network request
-      await new Promise((r) => setTimeout(r, 500));
-      return { id, status };
+      const res = await apiRequest("PUT", buildUrl(api.payments.update.path, { id }), { status });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
+  });
+}
+
+export function useCreatePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", api.payments.create.path, data);
+      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
   });
@@ -57,9 +67,9 @@ export function useWorks() {
 export function useCreateWork() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<Work>) => {
-      await new Promise((r) => setTimeout(r, 500));
-      return data;
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", api.works.create.path, data);
+      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.works.list.path] }),
   });
@@ -76,9 +86,9 @@ export function useReservations() {
 export function useCreateReservation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<Reservation>) => {
-      await new Promise((r) => setTimeout(r, 500));
-      return data;
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", api.reservations.create.path, data);
+      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] }),
   });
@@ -88,8 +98,8 @@ export function useUpdateReservation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      await new Promise((r) => setTimeout(r, 500));
-      return { id, status };
+      const res = await apiRequest("PUT", buildUrl(api.reservations.update.path, { id }), { status });
+      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] }),
   });
@@ -106,9 +116,20 @@ export function useSecurityLogs() {
 export function useCreateSecurityLog() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<SecurityLog>) => {
-      await new Promise((r) => setTimeout(r, 500));
-      return data;
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", api.securityLogs.create.path, data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] }),
+  });
+}
+
+export function useUpdateSecurityLog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await apiRequest("PUT", buildUrl(api.securityLogs.update.path, { id }), { status });
+      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] }),
   });

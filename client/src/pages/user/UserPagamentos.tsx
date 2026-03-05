@@ -1,4 +1,4 @@
-import { usePayments } from "@/hooks/use-condominium";
+import { usePayments, useUpdatePayment } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,11 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Download, CreditCard, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
+import { useToast } from "@/hooks/use-toast";
 
 export function UserPagamentos() {
   const { user } = useAuth();
   const { data: payments } = usePayments();
+  const { mutate: updatePayment, isPending } = useUpdatePayment();
+  const { toast } = useToast();
   const myPayments = payments?.filter(p => p.userId === user?.id) || [];
+
+  const handlePay = (id: number) => {
+    updatePayment({ id, status: 'paid' }, {
+      onSuccess: () => {
+        toast({ title: "Sucesso", description: "Pagamento realizado com sucesso." });
+      }
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -35,7 +46,13 @@ export function UserPagamentos() {
               <div className="flex justify-between"><span className="text-muted-foreground">Valor:</span><span className="font-mono font-bold">€{p.amount}</span></div>
             </div>
             
-            <Button className="w-full bg-amber-600 hover:bg-amber-700">Pagar com MBWay</Button>
+            <Button 
+              className="w-full bg-amber-600 hover:bg-amber-700"
+              onClick={() => handlePay(p.id)}
+              disabled={isPending}
+            >
+              {isPending ? "A processar..." : "Pagar com MBWay"}
+            </Button>
           </Card>
         ))}
       </div>
