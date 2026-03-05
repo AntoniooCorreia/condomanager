@@ -1,17 +1,72 @@
-import { useUsers } from "@/hooks/use-condominium";
+import { useUsers, useCreateUser } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Edit } from "lucide-react";
+import { Mail, Phone, Edit, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertUserSchema, type InsertUser } from "@shared/schema";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Condominos() {
   const { data: users, isLoading } = useUsers();
+  const createUser = useCreateUser();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
 
   const residents = users?.filter(u => u.role === 'user') || [];
+
+  const form = useForm<InsertUser>({
+    resolver: zodResolver(insertUserSchema),
+    defaultValues: {
+      name: "",
+      username: "",
+      password: "",
+      unit: "",
+      role: "user",
+    },
+  });
+
+  const onSubmit = (data: InsertUser) => {
+    createUser.mutate(data, {
+      onSuccess: () => {
+        toast({
+          title: "Sucesso",
+          description: "Condómino adicionado com sucesso.",
+        });
+        setOpen(false);
+        form.reset();
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Erro",
+          description: error.message || "Falha ao adicionar condómino.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -20,7 +75,79 @@ export function Condominos() {
           <h1 className="text-3xl font-display font-bold">Condóminos</h1>
           <p className="text-muted-foreground mt-1">Lista de residentes e frações.</p>
         </div>
-        <Button className="shadow-lg shadow-primary/20">Adicionar Condómino</Button>
+        
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="shadow-lg shadow-primary/20">
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Condómino
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Novo Condómino</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fração</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: 101A" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do condómino" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email / Utilizador</FormLabel>
+                      <FormControl>
+                        <Input placeholder="email@exemplo.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Palavra-passe</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={createUser.isPending}>
+                  {createUser.isPending ? "A guardar..." : "Guardar Condómino"}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <motion.div

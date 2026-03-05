@@ -1,13 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
-import { User, Payment, Work, Reservation, SecurityLog } from "@shared/schema";
+import { User, Payment, Work, Reservation, SecurityLog, InsertUser } from "@shared/schema";
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_WORKS, MOCK_RESERVATIONS, MOCK_SECURITY_LOGS, fetchWithMockFallback } from "@/lib/mock-data";
+import { apiRequest } from "@/lib/queryClient";
 
-// --- USERS ---
 export function useUsers() {
   return useQuery<User[]>({
     queryKey: [api.users.list.path],
-    queryFn: () => fetchWithMockFallback(api.users.list.path, MOCK_USERS),
+    queryFn: async () => {
+      const res = await fetch(api.users.list.path);
+      if (!res.ok) return MOCK_USERS;
+      return res.json();
+    },
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: InsertUser) => {
+      const res = await apiRequest("POST", api.users.create.path, data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.users.list.path] }),
   });
 }
 
