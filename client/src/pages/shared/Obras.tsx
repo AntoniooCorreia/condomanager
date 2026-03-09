@@ -30,6 +30,7 @@ import { insertWorkSchema, type InsertWork, type Work, type User } from "@shared
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { z } from "zod";
 
 export function Obras() {
   const { data: works, isLoading } = useWorks();
