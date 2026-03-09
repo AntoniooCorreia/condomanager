@@ -52,6 +52,17 @@ export const api = {
       path: '/api/users' as const,
       input: insertUserSchema,
       responses: { 201: z.custom<typeof users.$inferSelect>(), 400: errorSchemas.validation }
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/users/:id' as const,
+      input: insertUserSchema.partial(),
+      responses: { 200: z.custom<typeof users.$inferSelect>(), 404: errorSchemas.notFound }
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/users/:id' as const,
+      responses: { 204: z.void(), 404: errorSchemas.notFound }
     }
   },
   payments: {

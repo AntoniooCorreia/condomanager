@@ -1,6 +1,6 @@
 import { 
   Building2, LayoutDashboard, Users, CreditCard, HardHat, 
-  Calendar, ShieldAlert, UserCircle, LogOut 
+  Calendar, ShieldAlert, UserCircle, LogOut, Settings 
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,6 +16,15 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function AppSidebar() {
   const { user, logout } = useAuth();
@@ -86,23 +95,37 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 bg-sidebar/50 border-t">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white font-bold text-sm shadow-md">
-            {user?.name?.charAt(0) || "U"}
-          </div>
-          <div className="overflow-hidden">
-            <p className="text-sm font-bold truncate">{user?.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.unit ? `Fração ${user.unit}` : "Admin"}</p>
-          </div>
-        </div>
-        <Button 
-          variant="outline" 
-          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 border-none shadow-none" 
-          onClick={logout}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Terminar Sessão
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton className="h-14 px-2 hover:bg-secondary/50 rounded-xl transition-colors">
+              <Avatar className="h-9 w-9 border-2 border-primary/20">
+                <AvatarImage src={user?.avatar || ""} />
+                <AvatarFallback className="bg-primary text-white font-bold">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col items-start flex-1 ml-3 min-w-0">
+                <span className="text-sm font-bold truncate w-full">{user?.name}</span>
+                <span className="text-xs text-muted-foreground truncate w-full">{user?.unit ? `Fração ${user.unit}` : "Administrador"}</span>
+              </div>
+              <Settings className="w-4 h-4 text-muted-foreground" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="end" className="w-56 p-2 shadow-xl border-border/50">
+            <DropdownMenuLabel className="font-display font-bold">A Minha Conta</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href={isAdmin ? "/admin/perfil" : "/user/perfil"} className="flex items-center cursor-pointer">
+                <UserCircle className="w-4 h-4 mr-3" />
+                <span>Perfil e Infos</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={logout}>
+              <LogOut className="w-4 h-4 mr-3" />
+              <span>Sair do Sistema</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );

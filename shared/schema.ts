@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("user"), // "admin" | "user"
   name: text("name").notNull(),
   unit: text("unit"),
+  avatar: text("avatar"),
 });
 
 export const payments = pgTable("payments", {

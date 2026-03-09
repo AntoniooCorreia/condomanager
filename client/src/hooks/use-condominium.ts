@@ -26,6 +26,48 @@ export function useCreateUser() {
   });
 }
 
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<User> & { id: number }) => {
+      const res = await apiRequest("PUT", buildUrl(api.users.update.path, { id }), data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.users.list.path] }),
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/users/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.users.list.path] }),
+  });
+}
+
+export function useDeleteWork() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/works/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.works.list.path] }),
+  });
+}
+
+export function useUpdateWork() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: any) => {
+      const res = await apiRequest("PUT", buildUrl(api.works.update.path, { id }), data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.works.list.path] }),
+  });
+}
+
 // --- PAYMENTS ---
 export function usePayments() {
   return useQuery<Payment[]>({

@@ -1,11 +1,11 @@
-import { useUsers, useCreateUser } from "@/hooks/use-condominium";
+import { useUsers, useCreateUser, useDeleteUser, useUpdateUser } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Edit, Plus } from "lucide-react";
+import { Mail, Phone, Edit, Plus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -25,15 +25,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, type InsertUser } from "@shared/schema";
+import { insertUserSchema, type InsertUser, type User } from "@shared/schema";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export function Condominos() {
   const { data: users, isLoading } = useUsers();
   const createUser = useCreateUser();
+  const deleteUser = useDeleteUser();
+  const updateUser = useUpdateUser();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const residents = users?.filter(u => u.role === 'user') || [];
 
@@ -49,23 +52,49 @@ export function Condominos() {
   });
 
   const onSubmit = (data: InsertUser) => {
-    createUser.mutate(data, {
-      onSuccess: () => {
-        toast({
-          title: "Sucesso",
-          description: "Condómino adicionado com sucesso.",
-        });
-        setOpen(false);
-        form.reset();
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Erro",
-          description: error.message || "Falha ao adicionar condómino.",
-          variant: "destructive",
-        });
-      },
+    if (!data.username || !data.password || !data.name || !data.unit) {
+      toast({ title: "Erro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
+      return;
+    }
+    
+    if (editingUser) {
+      updateUser.mutate({ id: editingUser.id, ...data }, {
+        onSuccess: () => {
+          toast({ title: "Sucesso", description: "Condómino atualizado." });
+          setOpen(false);
+          setEditingUser(null);
+          form.reset();
+        }
+      });
+    } else {
+      createUser.mutate(data, {
+        onSuccess: () => {
+          toast({ title: "Sucesso", description: "Condómino adicionado." });
+          setOpen(false);
+          form.reset();
+        }
+      });
+    }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    form.reset({
+      name: user.name,
+      username: user.username,
+      password: user.password,
+      unit: user.unit || "",
+      role: user.role,
     });
+    setOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Tem a certeza que deseja eliminar este condómino?")) {
+      deleteUser.mutate(id, {
+        onSuccess: () => toast({ title: "Sucesso", description: "Condómino eliminado." })
+      });
+    }
   };
 
   return (
@@ -188,7 +217,8 @@ export function Condominos() {
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary"><Mail className="w-4 h-4" /></Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary"><Phone className="w-4 h-4" /></Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary"><Edit className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(user)}><Edit className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-500 hover:text-rose-700" onClick={() => handleDelete(user.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

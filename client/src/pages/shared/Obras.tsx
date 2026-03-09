@@ -1,9 +1,9 @@
-import { useWorks, useCreateWork } from "@/hooks/use-condominium";
+import { useWorks, useCreateWork, useDeleteWork, useUpdateWork } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HardHat, Plus, Calendar as CalendarIcon, DollarSign } from "lucide-react";
+import { HardHat, Plus, Calendar as CalendarIcon, DollarSign, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
@@ -26,16 +26,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertWorkSchema, type InsertWork } from "@shared/schema";
+import { insertWorkSchema, type InsertWork, type Work } from "@shared/schema";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export function Obras() {
   const { data: works, isLoading } = useWorks();
   const createWork = useCreateWork();
+  const deleteWork = useDeleteWork();
+  const updateWork = useUpdateWork();
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [editingWork, setEditingWork] = useState<Work | null>(null);
   const isAdmin = user?.role === "admin";
 
   const form = useForm<InsertWork>({
@@ -49,13 +52,43 @@ export function Obras() {
   });
 
   const onSubmit = (data: InsertWork) => {
-    createWork.mutate(data, {
-      onSuccess: () => {
-        toast({ title: "Sucesso", description: "Obra registada com sucesso." });
-        setOpen(false);
-        form.reset();
-      },
+    if (editingWork) {
+      updateWork.mutate({ id: editingWork.id, ...data }, {
+        onSuccess: () => {
+          toast({ title: "Sucesso", description: "Obra atualizada." });
+          setOpen(false);
+          setEditingWork(null);
+          form.reset();
+        }
+      });
+    } else {
+      createWork.mutate(data, {
+        onSuccess: () => {
+          toast({ title: "Sucesso", description: "Obra registada com sucesso." });
+          setOpen(false);
+          form.reset();
+        },
+      });
+    }
+  };
+
+  const handleEdit = (work: Work) => {
+    setEditingWork(work);
+    form.reset({
+      title: work.title,
+      description: work.description,
+      status: work.status,
+      cost: work.cost?.toString() || "0",
     });
+    setOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Tem a certeza?")) {
+      deleteWork.mutate(id, {
+        onSuccess: () => toast({ title: "Sucesso", description: "Obra eliminada." })
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -167,8 +200,9 @@ export function Obras() {
                 </div>
               </div>
               {isAdmin && (
-                <div className="bg-secondary/30 p-3 flex justify-end">
-                  <Button variant="ghost" size="sm" className="text-primary">Editar Detalhes</Button>
+                <div className="bg-secondary/30 p-3 flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" className="text-primary" onClick={() => handleEdit(work)}>Editar Detalhes</Button>
+                  <Button variant="ghost" size="sm" className="text-rose-500" onClick={() => handleDelete(work.id)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
               )}
             </Card>

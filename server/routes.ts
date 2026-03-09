@@ -13,25 +13,14 @@ export async function registerRoutes(
   app.post(api.auth.login.path, async (req, res) => {
     try {
       const input = api.auth.login.input.parse(req.body);
-      let user = await storage.getUserByUsername(input.username);
+      const user = await storage.getUserByUsername(input.username);
       
-      // Mock login - create user if doesn't exist just to test
-      if (!user) {
-        const isAdmin = input.username === 'admin';
-        user = await storage.createUser({
-          username: input.username,
-          password: input.password,
-          role: isAdmin ? 'admin' : 'user',
-          name: input.username === 'admin' ? 'Administrador' : 'Morador',
-          unit: isAdmin ? null : '101A'
-        });
+      if (!user || user.password !== input.password) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
       }
       res.status(200).json(user);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(400).json({ message: "Dados inválidos" });
     }
   });
 
@@ -53,16 +42,37 @@ export async function registerRoutes(
   app.post(api.users.create.path, async (req, res) => {
     try {
       const input = api.users.create.input.parse(req.body);
+      if (!input.username || !input.password || !input.name || !input.unit) {
+        return res.status(400).json({ message: "Todos os campos são obrigatórios" });
+      }
       const user = await storage.createUser(input);
       res.status(201).json(user);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
-      }
+      res.status(400).json({ message: "Erro ao criar utilizador" });
     }
   });
 
-  // Payments
+  app.put(api.users.update.path, async (req, res) => {
+    try {
+      const input = api.users.update.input.parse(req.body);
+      const updated = await storage.updateUser(Number(req.params.id), input);
+      if (!updated) return res.status(404).json({ message: "Não encontrado" });
+      res.json(updated);
+    } catch (err) {
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  app.delete('/api/users/:id', async (req, res) => {
+    await storage.deleteUser(Number(req.params.id));
+    res.status(204).end();
+  });
+  
+  app.delete('/api/works/:id', async (req, res) => {
+    await storage.deleteWork(Number(req.params.id));
+    res.status(204).end();
+  });
+
   app.get(api.payments.list.path, async (req, res) => {
     const payments = await storage.getPayments();
     res.json(payments);
@@ -70,13 +80,15 @@ export async function registerRoutes(
   app.post(api.payments.create.path, async (req, res) => {
     try {
       const bodySchema = api.payments.create.input.extend({
-        amount: z.coerce.string()
+        amount: z.coerce.string(),
+        userId: z.coerce.number(),
+        dueDate: z.coerce.date()
       });
       const input = bodySchema.parse(req.body);
       const payment = await storage.createPayment(input);
       res.status(201).json(payment);
     } catch (err) {
-      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(400).json({ message: "Erro ao criar aviso de pagamento" });
     }
   });
   app.put(api.payments.update.path, async (req, res) => {
