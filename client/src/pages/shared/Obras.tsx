@@ -1,9 +1,9 @@
-import { useWorks, useCreateWork, useDeleteWork, useUpdateWork } from "@/hooks/use-condominium";
+import { useWorks, useCreateWork, useDeleteWork, useUpdateWork, useUsers } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HardHat, Plus, Calendar as CalendarIcon, DollarSign, Trash2 } from "lucide-react";
+import { HardHat, Plus, Calendar as CalendarIcon, DollarSign, Trash2, Users as UsersIcon, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
@@ -26,12 +26,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertWorkSchema, type InsertWork, type Work } from "@shared/schema";
+import { insertWorkSchema, type InsertWork, type Work, type User } from "@shared/schema";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function Obras() {
   const { data: works, isLoading } = useWorks();
+  const { data: users } = useUsers();
   const createWork = useCreateWork();
   const deleteWork = useDeleteWork();
   const updateWork = useUpdateWork();
@@ -39,19 +41,23 @@ export function Obras() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<Work | null>(null);
+  const [viewingWork, setViewingWork] = useState<Work | null>(null);
   const isAdmin = user?.role === "admin";
 
-  const form = useForm<InsertWork>({
-    resolver: zodResolver(insertWorkSchema),
+  const residents = users?.filter(u => u.role === 'user') || [];
+
+  const form = useForm<InsertWork & { assignedUserIds: number[] }>({
+    resolver: zodResolver(insertWorkSchema.extend({ assignedUserIds: z.array(z.number()).optional() })),
     defaultValues: {
       title: "",
       description: "",
       status: "planning",
       cost: "0",
+      assignedUserIds: [],
     },
   });
 
-  const onSubmit = (data: InsertWork) => {
+  const onSubmit = (data: any) => {
     if (editingWork) {
       updateWork.mutate({ id: editingWork.id, ...data }, {
         onSuccess: () => {
@@ -79,6 +85,7 @@ export function Obras() {
       description: work.description,
       status: work.status,
       cost: work.cost?.toString() || "0",
+      assignedUserIds: work.assignedUserIds || [],
     });
     setOpen(true);
   };
@@ -89,6 +96,11 @@ export function Obras() {
         onSuccess: () => toast({ title: "Sucesso", description: "Obra eliminada." })
       });
     }
+  };
+
+  const calculatePerUser = (cost: string | null | undefined, assignedCount: number) => {
+    if (!cost || assignedCount === 0) return 0;
+    return parseFloat(cost) / assignedCount;
   };
 
   const getStatusBadge = (status: string) => {
@@ -153,8 +165,49 @@ export function Obras() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={createWork.isPending}>
-                    {createWork.isPending ? "A guardar..." : "Guardar Obra"}
+                  <FormField
+                    control={form.control}
+                    name="assignedUserIds"
+                    render={() => (
+                      <FormItem>
+                        <FormLabel>Condóminos Envolvidos</FormLabel>
+                        <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                          {residents.map((res) => (
+                            <FormField
+                              key={res.id}
+                              control={form.control}
+                              name="assignedUserIds"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(res.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...(field.value || []), res.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== res.id
+                                                )
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal">
+                                      {res.unit} - {res.name}
+                                    </FormLabel>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createWork.isPending || updateWork.isPending}>
+                    {createWork.isPending || updateWork.isPending ? "A guardar..." : editingWork ? "Atualizar Obra" : "Guardar Obra"}
                   </Button>
                 </form>
               </Form>
@@ -162,6 +215,45 @@ export function Obras() {
           </Dialog>
         )}
       </div>
+
+      <Dialog open={!!viewingWork} onOpenChange={(o) => !o && setViewingWork(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{viewingWork?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">{viewingWork?.description}</p>
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+              <h4 className="font-bold text-sm mb-3 uppercase tracking-wider text-primary">Informação Financeira</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Custo Total:</span>
+                  <span className="font-bold">€{viewingWork?.cost}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Condóminos Envolvidos:</span>
+                  <span className="font-bold">{viewingWork?.assignedUserIds?.length || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span>Cada Condómino Paga:</span>
+                  <span className="font-bold text-primary">€{calculatePerUser(viewingWork?.cost, viewingWork?.assignedUserIds?.length || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+            {viewingWork?.assignedUserIds && viewingWork.assignedUserIds.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold">Condóminos:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {viewingWork.assignedUserIds.map(uid => {
+                    const u = users?.find(user => user.id === uid);
+                    return u ? <Badge key={uid} variant="outline">{u.unit} - {u.name}</Badge> : null;
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
@@ -173,7 +265,10 @@ export function Obras() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
-            <Card className="flex flex-col h-full overflow-hidden border-border/50 hover:shadow-md transition-shadow group">
+            <Card 
+              className="flex flex-col h-full overflow-hidden border-border/50 hover:shadow-md transition-shadow group cursor-pointer"
+              onClick={() => setViewingWork(work)}
+            >
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-primary/5 text-primary rounded-xl group-hover:scale-110 transition-transform">

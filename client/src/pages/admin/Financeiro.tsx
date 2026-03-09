@@ -1,4 +1,4 @@
-import { usePayments, useUsers, useUpdatePayment, useCreatePayment } from "@/hooks/use-condominium";
+import { usePayments, useUsers, useUpdatePayment, useCreatePayment, useDeletePayment } from "@/hooks/use-condominium";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Clock, Plus } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Plus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -36,6 +36,7 @@ export function Financeiro() {
   const { data: payments, isLoading } = usePayments();
   const { data: users } = useUsers();
   const { mutate: updatePayment, isPending } = useUpdatePayment();
+  const deletePayment = useDeletePayment();
   const createPayment = useCreatePayment();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -67,6 +68,16 @@ export function Financeiro() {
         toast({ title: "Sucesso", description: "Pagamento marcado como pago." });
       }
     });
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Tem a certeza que deseja eliminar este aviso?")) {
+      deletePayment.mutate(id, {
+        onSuccess: () => {
+          toast({ title: "Sucesso", description: "Aviso eliminado." });
+        }
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -196,17 +207,28 @@ export function Financeiro() {
                     <TableCell className="font-bold">€{payment.amount}</TableCell>
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell className="text-right">
-                      {payment.status !== 'paid' && (
+                      <div className="flex justify-end gap-2">
+                        {payment.status !== 'paid' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={() => handleMarkPaid(payment.id)}
+                            disabled={isPending}
+                          >
+                            Marcar Pago
+                          </Button>
+                        )}
                         <Button 
-                          size="sm" 
+                          size="icon" 
                           variant="ghost" 
-                          className="text-primary hover:bg-primary/10 hover:text-primary"
-                          onClick={() => handleMarkPaid(payment.id)}
-                          disabled={isPending}
+                          className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                          onClick={() => handleDelete(payment.id)}
+                          disabled={deletePayment.isPending}
                         >
-                          Marcar Pago
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

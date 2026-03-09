@@ -102,6 +102,11 @@ export async function registerRoutes(
     }
   });
 
+  app.delete('/api/payments/:id', async (req, res) => {
+    await storage.deletePayment(Number(req.params.id));
+    res.status(204).end();
+  });
+
   // Works
   app.get(api.works.list.path, async (req, res) => {
     const w = await storage.getWorks();
@@ -110,7 +115,8 @@ export async function registerRoutes(
   app.post(api.works.create.path, async (req, res) => {
     try {
       const bodySchema = api.works.create.input.extend({
-        cost: z.coerce.string().optional()
+        cost: z.coerce.string().optional(),
+        assignedUserIds: z.array(z.number()).optional()
       });
       const input = bodySchema.parse(req.body);
       const w = await storage.createWork(input);
@@ -122,7 +128,8 @@ export async function registerRoutes(
   app.put(api.works.update.path, async (req, res) => {
     try {
       const bodySchema = api.works.update.input.extend({
-        cost: z.coerce.string().optional()
+        cost: z.coerce.string().optional(),
+        assignedUserIds: z.array(z.number()).optional()
       });
       const input = bodySchema.parse(req.body);
       const updated = await storage.updateWork(Number(req.params.id), input);

@@ -30,6 +30,7 @@ export const works = pgTable("works", {
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   cost: numeric("cost"),
+  assignedUserIds: integer("assigned_user_ids").array(),
 });
 
 export const reservations = pgTable("reservations", {

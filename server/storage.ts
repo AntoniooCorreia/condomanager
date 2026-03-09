@@ -21,6 +21,7 @@ export interface IStorage {
   getPayments(): Promise<Payment[]>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePayment(id: number, updates: Partial<InsertPayment>): Promise<Payment | undefined>;
+  deletePayment(id: number): Promise<void>;
 
   // works
   getWorks(): Promise<Work[]>;
@@ -72,6 +73,9 @@ export class DatabaseStorage implements IStorage {
   async updatePayment(id: number, updates: Partial<InsertPayment>): Promise<Payment | undefined> {
     const [updated] = await db.update(payments).set(updates).where(eq(payments.id, id)).returning();
     return updated;
+  }
+  async deletePayment(id: number): Promise<void> {
+    await db.delete(payments).where(eq(payments.id, id));
   }
 
   async getWorks(): Promise<Work[]> {
