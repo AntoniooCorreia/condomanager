@@ -97,21 +97,21 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 bg-sidebar/50 border-t">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton className="h-14 px-2 hover:bg-secondary/50 rounded-xl transition-colors">
+            <button className="w-full h-14 px-2 hover:bg-secondary/50 rounded-xl transition-colors flex items-center gap-3">
               <Avatar className="h-9 w-9 border-2 border-primary/20">
                 <AvatarImage src={user?.avatar || ""} />
-                <AvatarFallback className="bg-primary text-white font-bold">
+                <AvatarFallback className="bg-primary text-white font-bold text-sm">
                   {user?.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col items-start flex-1 ml-3 min-w-0">
+              <div className="flex flex-col items-start flex-1 min-w-0">
                 <span className="text-sm font-bold truncate w-full">{user?.name}</span>
                 <span className="text-xs text-muted-foreground truncate w-full">{user?.unit ? `Fração ${user.unit}` : "Administrador"}</span>
               </div>
-              <Settings className="w-4 h-4 text-muted-foreground" />
-            </SidebarMenuButton>
+              <Settings className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" className="w-56 p-2 shadow-xl border-border/50">
+          <DropdownMenuContent side="right" align="end" className="w-56 shadow-xl border-border/50">
             <DropdownMenuLabel className="font-display font-bold">A Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
