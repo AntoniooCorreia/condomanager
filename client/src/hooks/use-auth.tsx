@@ -19,19 +19,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Attempt to fetch current user
-    fetch(api.auth.me.path)
-      .then((res) => {
-        if (res.ok) return res.json();
-        throw new Error("Not logged in");
-      })
-      .then((data) => setUser(data))
-      .catch(() => {
-        // Mock fallback for dev
-        const stored = localStorage.getItem("mock_user");
-        if (stored) setUser(JSON.parse(stored));
-      })
-      .finally(() => setIsLoading(false));
+    // Try to restore session from localStorage first
+    const stored = localStorage.getItem("current_user");
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch (e) {
+        localStorage.removeItem("current_user");
+      }
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (username: string, password: string) => {
@@ -44,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data);
+        localStorage.setItem("current_user", JSON.stringify(data));
       } else {
         throw new Error("Login failed");
       }
@@ -52,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const mockUser = MOCK_USERS.find((u) => u.username === username);
       if (mockUser) {
         setUser(mockUser);
-        localStorage.setItem("mock_user", JSON.stringify(mockUser));
+        localStorage.setItem("current_user", JSON.stringify(mockUser));
       } else {
         throw new Error("Invalid credentials");
       }
@@ -61,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem("current_user");
     localStorage.removeItem("mock_user");
     fetch(api.auth.logout.path, { method: "POST" }).catch(() => {});
     setLocation("/");
