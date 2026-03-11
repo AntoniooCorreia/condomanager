@@ -1,17 +1,20 @@
 import { useAuth } from "@/hooks/use-auth";
-import { usePayments, useReservations } from "@/hooks/use-condominium";
+import { usePayments, useReservations, useUsers } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Calendar, Bell, ArrowRight } from "lucide-react";
+import { CreditCard, Calendar, Bell, ArrowRight, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Building2 } from "lucide-react";
 
 export function UserHome() {
   const { user } = useAuth();
   const { data: payments } = usePayments();
   const { data: reservations } = useReservations();
+  const { data: users } = useUsers();
 
   const myPayments = payments?.filter(p => p.userId === user?.id) || [];
   const pendingPayment = myPayments.find(p => p.status !== 'paid');
@@ -19,6 +22,8 @@ export function UserHome() {
   const myNextRes = reservations
     ?.filter(r => r.userId === user?.id && new Date(r.date) >= new Date() && r.status === 'approved')
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
+  const myTenants = user?.id ? users?.filter(u => u.relatedCondominoId === user.id) || [] : [];
 
   return (
     <div className="space-y-8">
@@ -117,10 +122,31 @@ export function UserHome() {
           </Card>
         </motion.div>
       </div>
+
+      {myTenants.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <Card className="p-6 border-border/50 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Meus Arrendatários</h3>
+                <p className="text-sm text-muted-foreground">Utilizadores associados à sua fração</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {myTenants.map(tenant => (
+                <div key={tenant.id} className="bg-secondary/30 rounded-lg p-4 border border-border">
+                  <p className="font-bold text-sm">{tenant.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{tenant.username}</p>
+                  <Badge className="mt-2 bg-blue-50 text-blue-600 border-blue-200">Arrendatário</Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }
-
-// Needed to import icons missed in the UserHome scope above
-import { CheckCircle2, Building2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";

@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   unit: text("unit"),
   avatar: text("avatar"),
+  userType: text("user_type").notNull().default("condomino"), // "gestor", "condomino", "arrendatario"
+  relatedCondominoId: integer("related_condomino_id").references(() => users.id), // Para arrendatarios
 });
 
 export const payments = pgTable("payments", {

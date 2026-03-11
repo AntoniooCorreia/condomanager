@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Clock, Plus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,10 @@ export function Financeiro() {
   const createPayment = useCreatePayment();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("pagar");
+
+  const pendingPayments = payments?.filter(p => p.status === 'pending') || [];
+  const paidPayments = payments?.filter(p => p.status === 'paid') || [];
 
   const form = useForm<InsertPayment>({
     resolver: zodResolver(insertPaymentSchema),
@@ -180,8 +185,19 @@ export function Financeiro() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <Card className="overflow-hidden border-border/50 shadow-sm">
-          <Table>
+        <Card className="border-border/50 shadow-sm">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+              <TabsTrigger value="pagar" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                Por Pagar ({pendingPayments.length})
+              </TabsTrigger>
+              <TabsTrigger value="pagos" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                Pagos ({paidPayments.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pagar" className="mt-0">
+              <Table>
             <TableHeader className="bg-secondary/50">
               <TableRow className="border-border/50">
                 <TableHead>Fração</TableHead>
@@ -192,49 +208,97 @@ export function Financeiro() {
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-10">A carregar...</TableCell></TableRow>
-              ) : payments?.map((payment) => {
-                const user = users?.find(u => u.id === payment.userId);
-                return (
-                  <TableRow key={payment.id} className="border-border/50 hover:bg-secondary/20">
-                    <TableCell className="font-medium">{user?.unit || 'N/A'}</TableCell>
-                    <TableCell>{payment.description}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(payment.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="font-bold">€{payment.amount}</TableCell>
-                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {payment.status !== 'paid' && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={() => handleMarkPaid(payment.id)}
-                            disabled={isPending}
-                          >
-                            Marcar Pago
-                          </Button>
-                        )}
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
-                          onClick={() => handleDelete(payment.id)}
-                          disabled={deletePayment.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-10">A carregar...</TableCell></TableRow>
+                  ) : pendingPayments.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Sem pagamentos pendentes.</TableCell></TableRow>
+                  ) : pendingPayments.map((payment) => {
+                    const user = users?.find(u => u.id === payment.userId);
+                    return (
+                      <TableRow key={payment.id} className="border-border/50 hover:bg-secondary/20">
+                        <TableCell className="font-medium">{user?.unit || 'N/A'}</TableCell>
+                        <TableCell>{payment.description}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(payment.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-bold">€{payment.amount}</TableCell>
+                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-primary hover:bg-primary/10 hover:text-primary"
+                              onClick={() => handleMarkPaid(payment.id)}
+                              disabled={isPending}
+                            >
+                              Marcar Pago
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                              onClick={() => handleDelete(payment.id)}
+                              disabled={deletePayment.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="pagos" className="mt-0">
+              <Table>
+                <TableHeader className="bg-secondary/50">
+                  <TableRow className="border-border/50">
+                    <TableHead>Fração</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Data Pagamento</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-10">A carregar...</TableCell></TableRow>
+                  ) : paidPayments.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Sem pagamentos pagos.</TableCell></TableRow>
+                  ) : paidPayments.map((payment) => {
+                    const user = users?.find(u => u.id === payment.userId);
+                    return (
+                      <TableRow key={payment.id} className="border-border/50 hover:bg-secondary/20">
+                        <TableCell className="font-medium">{user?.unit || 'N/A'}</TableCell>
+                        <TableCell>{payment.description}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(payment.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-bold">€{payment.amount}</TableCell>
+                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                            onClick={() => handleDelete(payment.id)}
+                            disabled={deletePayment.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TabsContent>
+          </Tabs>
         </Card>
       </motion.div>
     </div>

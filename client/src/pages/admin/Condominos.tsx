@@ -5,7 +5,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Edit, Plus, Trash2 } from "lucide-react";
+import { Mail, Phone, Edit, Plus, Trash2, Key } from "lucide-react";
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -40,7 +43,7 @@ export function Condominos() {
 
   const residents = users?.filter(u => u.role === 'user') || [];
 
-  const form = useForm<InsertUser>({
+  const form = useForm<InsertUser & { userType?: string; relatedCondominoId?: number }>({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
       name: "",
@@ -48,6 +51,8 @@ export function Condominos() {
       password: "",
       unit: "",
       role: "user",
+      userType: "condomino",
+      relatedCondominoId: undefined,
     },
   });
 
@@ -170,8 +175,54 @@ export function Condominos() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={createUser.isPending}>
-                  {createUser.isPending ? "A guardar..." : "Guardar Condómino"}
+                <FormField
+                  control={form.control}
+                  name="userType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Utilizador</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="gestor">Gestor de Condomínio</SelectItem>
+                          <SelectItem value="condomino">Condómino</SelectItem>
+                          <SelectItem value="arrendatario">Arrendatario</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {form.watch("userType") === "arrendatario" && (
+                  <FormField
+                    control={form.control}
+                    name="relatedCondominoId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Condómino Associado</FormLabel>
+                        <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o condómino" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {residents.map(u => (
+                              <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                <Button type="submit" className="w-full" disabled={createUser.isPending || updateUser.isPending}>
+                  {createUser.isPending || updateUser.isPending ? "A guardar..." : editingUser ? "Atualizar Utilizador" : "Guardar Utilizador"}
                 </Button>
               </form>
             </Form>
@@ -211,7 +262,11 @@ export function Condominos() {
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">{user.username}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Ativo</Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 w-fit">Ativo</Badge>
+                        {user.userType === 'gestor' && <Badge className="bg-purple-50 text-purple-600 border-purple-200 w-fit">Gestor</Badge>}
+                        {user.userType === 'arrendatario' && <Badge className="bg-blue-50 text-blue-600 border-blue-200 w-fit">Arrendatario</Badge>}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
