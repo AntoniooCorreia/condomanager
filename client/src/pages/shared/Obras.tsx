@@ -46,6 +46,11 @@ export function Obras() {
   const isAdmin = user?.role === "admin";
 
   const residents = users?.filter(u => u.role === 'user') || [];
+  
+  // Filter works: admins see all, users only see works assigned to them
+  const filteredWorks = isAdmin 
+    ? works 
+    : works?.filter(w => w.assignedUserIds?.includes(user?.id || 0)) || [];
 
   const form = useForm<InsertWork & { assignedUserIds: number[] }>({
     resolver: zodResolver(insertWorkSchema.extend({ assignedUserIds: z.array(z.number()).optional() })),
@@ -259,7 +264,11 @@ export function Obras() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           <p className="text-muted-foreground">A carregar...</p>
-        ) : works?.map((work, index) => (
+        ) : filteredWorks.length === 0 ? (
+          <div className="col-span-full text-center p-8 text-muted-foreground">
+            {isAdmin ? "Nenhuma obra registada." : "Não tem obras associadas."}
+          </div>
+        ) : filteredWorks?.map((work, index) => (
           <motion.div
             key={work.id}
             initial={{ opacity: 0, y: 20 }}

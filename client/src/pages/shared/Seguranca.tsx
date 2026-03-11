@@ -38,6 +38,11 @@ export function Seguranca() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const isAdmin = user?.role === "admin";
+  
+  // Filter logs: admins see all, users only see logs they reported
+  const filteredLogs = isAdmin 
+    ? logs 
+    : logs?.filter(l => l.reportedBy === user?.id) || [];
 
   const form = useForm<InsertSecurityLog>({
     resolver: zodResolver(insertSecurityLogSchema),
@@ -107,7 +112,11 @@ export function Seguranca() {
       </div>
 
       <div className="space-y-4">
-        {isLoading ? <p>A carregar...</p> : logs?.map((log, i) => {
+        {isLoading ? <p>A carregar...</p> : filteredLogs.length === 0 ? (
+          <Card className="p-8 text-center border-border/50">
+            <p className="text-muted-foreground font-medium">{isAdmin ? "Nenhuma ocorrência registada." : "Não tem ocorrências reportadas."}</p>
+          </Card>
+        ) : filteredLogs?.map((log, i) => {
           const reporter = users?.find(u => u.id === log.reportedBy);
           const isOpen = log.status === 'open';
           
