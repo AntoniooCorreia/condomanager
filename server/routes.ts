@@ -3,6 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { smartCondoChat, getOrCreateConversation, getChatHistory } from "./smartcondo";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -243,6 +244,36 @@ export async function registerRoutes(
       console.error("Failed to seed database:", error);
     }
   }, 1000);
+
+  // SmartCondo AI Assistant
+  app.get("/api/smartcondo/conversation", async (req, res) => {
+    try {
+      // Use userId=1 as default for unauthenticated; in real app parse session
+      const userId = parseInt(req.query.userId as string) || 1;
+      const conv = await getOrCreateConversation(userId);
+      const history = await getChatHistory(conv.id);
+      res.json({ conversationId: conv.id, messages: history });
+    } catch (err) {
+      console.error("SmartCondo conversation error:", err);
+      res.status(500).json({ error: "Erro ao carregar conversa" });
+    }
+  });
+
+  app.post("/api/smartcondo/chat", async (req, res) => {
+    try {
+      const { conversationId, message, userId } = req.body;
+      if (!conversationId || !message) {
+        return res.status(400).json({ error: "conversationId e message são obrigatórios" });
+      }
+      const uid = userId || 1;
+      await smartCondoChat(uid, conversationId, message, res);
+    } catch (err) {
+      console.error("SmartCondo chat error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Erro no assistente" });
+      }
+    }
+  });
 
   return httpServer;
 }
