@@ -107,6 +107,34 @@ export async function registerRoutes(
     res.status(204).end();
   });
 
+  // Payment Schedules
+  app.get('/api/payment-schedules', async (req, res) => {
+    const schedules = await storage.getPaymentSchedules();
+    res.json(schedules);
+  });
+  app.post('/api/payment-schedules', async (req, res) => {
+    try {
+      const bodySchema = z.object({
+        condominoId: z.coerce.number(),
+        tenantId: z.coerce.number(),
+        dayOfMonth: z.coerce.number().min(1).max(28),
+        amount: z.coerce.string(),
+        description: z.string(),
+        active: z.boolean().optional().default(true),
+      });
+      const input = bodySchema.parse(req.body);
+      const schedule = await storage.createPaymentSchedule(input);
+      res.status(201).json(schedule);
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(400).json({ message: "Erro ao criar agendamento" });
+    }
+  });
+  app.delete('/api/payment-schedules/:id', async (req, res) => {
+    await storage.deletePaymentSchedule(Number(req.params.id));
+    res.status(204).end();
+  });
+
   // Works
   app.get(api.works.list.path, async (req, res) => {
     const w = await storage.getWorks();

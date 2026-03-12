@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, numeric, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -43,6 +43,17 @@ export const reservations = pgTable("reservations", {
   status: text("status").notNull(), // "pending", "approved", "rejected"
 });
 
+export const paymentSchedules = pgTable("payment_schedules", {
+  id: serial("id").primaryKey(),
+  condominoId: integer("condomino_id").references(() => users.id).notNull(),
+  tenantId: integer("tenant_id").references(() => users.id).notNull(),
+  dayOfMonth: integer("day_of_month").notNull(), // 1-28
+  amount: numeric("amount").notNull(),
+  description: text("description").notNull(),
+  active: boolean("active").notNull().default(true),
+  startDate: timestamp("start_date").notNull().defaultNow(),
+});
+
 export const securityLogs = pgTable("security_logs", {
   id: serial("id").primaryKey(),
   reportedBy: integer("reported_by").references(() => users.id),
@@ -85,6 +96,7 @@ export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true 
 export const insertWorkSchema = createInsertSchema(works).omit({ id: true });
 export const insertReservationSchema = createInsertSchema(reservations).omit({ id: true });
 export const insertSecurityLogSchema = createInsertSchema(securityLogs).omit({ id: true, date: true });
+export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({ id: true, startDate: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -97,3 +109,5 @@ export type Reservation = typeof reservations.$inferSelect;
 export type InsertReservation = z.infer<typeof insertReservationSchema>;
 export type SecurityLog = typeof securityLogs.$inferSelect;
 export type InsertSecurityLog = z.infer<typeof insertSecurityLogSchema>;
+export type PaymentSchedule = typeof paymentSchedules.$inferSelect;
+export type InsertPaymentSchedule = z.infer<typeof insertPaymentScheduleSchema>;

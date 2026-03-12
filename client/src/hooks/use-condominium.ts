@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { User, Payment, Work, Reservation, SecurityLog, InsertUser } from "@shared/schema";
+import { User, Payment, Work, Reservation, SecurityLog, InsertUser, PaymentSchedule, InsertPaymentSchedule } from "@shared/schema";
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_WORKS, MOCK_RESERVATIONS, MOCK_SECURITY_LOGS, fetchWithMockFallback } from "@/lib/mock-data";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -105,6 +105,39 @@ export function useDeletePayment() {
       await apiRequest("DELETE", `/api/payments/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
+  });
+}
+
+// --- PAYMENT SCHEDULES ---
+export function usePaymentSchedules() {
+  return useQuery<PaymentSchedule[]>({
+    queryKey: ["/api/payment-schedules"],
+    queryFn: async () => {
+      const res = await fetch("/api/payment-schedules");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+}
+
+export function useCreatePaymentSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: InsertPaymentSchedule) => {
+      const res = await apiRequest("POST", "/api/payment-schedules", data);
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/payment-schedules"] }),
+  });
+}
+
+export function useDeletePaymentSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/payment-schedules/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/payment-schedules"] }),
   });
 }
 

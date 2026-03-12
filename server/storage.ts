@@ -5,7 +5,8 @@ import {
   payments, type Payment, type InsertPayment,
   works, type Work, type InsertWork,
   reservations, type Reservation, type InsertReservation,
-  securityLogs, type SecurityLog, type InsertSecurityLog
+  securityLogs, type SecurityLog, type InsertSecurityLog,
+  paymentSchedules, type PaymentSchedule, type InsertPaymentSchedule
 } from "@shared/schema";
 
 export interface IStorage {
@@ -22,6 +23,11 @@ export interface IStorage {
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePayment(id: number, updates: Partial<InsertPayment>): Promise<Payment | undefined>;
   deletePayment(id: number): Promise<void>;
+
+  // payment schedules
+  getPaymentSchedules(): Promise<PaymentSchedule[]>;
+  createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule>;
+  deletePaymentSchedule(id: number): Promise<void>;
 
   // works
   getWorks(): Promise<Work[]>;
@@ -76,6 +82,17 @@ export class DatabaseStorage implements IStorage {
   }
   async deletePayment(id: number): Promise<void> {
     await db.delete(payments).where(eq(payments.id, id));
+  }
+
+  async getPaymentSchedules(): Promise<PaymentSchedule[]> {
+    return await db.select().from(paymentSchedules);
+  }
+  async createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
+    const [created] = await db.insert(paymentSchedules).values(schedule).returning();
+    return created;
+  }
+  async deletePaymentSchedule(id: number): Promise<void> {
+    await db.delete(paymentSchedules).where(eq(paymentSchedules.id, id));
   }
 
   async getWorks(): Promise<Work[]> {
