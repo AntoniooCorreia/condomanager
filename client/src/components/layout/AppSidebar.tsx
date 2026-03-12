@@ -1,6 +1,6 @@
 import { 
   Building2, LayoutDashboard, Users, CreditCard, HardHat, 
-  Calendar, ShieldAlert, UserCircle, LogOut, Settings 
+  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -39,14 +39,16 @@ export function AppSidebar() {
     { title: "Reservas", url: "/admin/reservas", icon: Calendar },
     { title: "Utilizadores", url: "/admin/utilizadores", icon: UserCircle },
     { title: "Segurança", url: "/admin/seguranca", icon: ShieldAlert },
+    { title: "Câmeras CCTV", url: "/admin/camaras", icon: Camera },
   ];
 
   const userLinks = [
     { title: "Dashboard", url: "/user", icon: LayoutDashboard },
-    { title: "Meus Pagamentos", url: "/user/pagamentos", icon: CreditCard },
+    { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
     { title: "Reservar Áreas", url: "/user/reservar", icon: Calendar },
     { title: "Obras no Edifício", url: "/user/obras", icon: HardHat },
     { title: "Ocorrências", url: "/user/seguranca", icon: ShieldAlert },
+    { title: "Câmeras CCTV", url: "/user/camaras", icon: Camera },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
