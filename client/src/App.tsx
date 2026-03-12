@@ -23,6 +23,7 @@ import { UserHome } from "./pages/user/UserHome";
 import { UserPagamentos } from "./pages/user/UserPagamentos";
 import { UserPerfil } from "./pages/user/UserPerfil";
 import { UserCameras } from "./pages/user/UserCameras";
+import { UserCobrancas } from "./pages/user/UserCobrancas";
 
 // Helpers for layout wrapping
 const AdminRoute = ({ component: Component }: { component: React.ComponentType }) => (
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/user/perfil"><UserRoute component={UserPerfil} /></Route>
       <Route path="/user/camaras"><UserRoute component={UserCameras} /></Route>
       <Route path="/admin/camaras"><AdminRoute component={UserCameras} /></Route>
+      <Route path="/user/cobrancas"><UserRoute component={UserCobrancas} /></Route>
 
       <Route component={NotFound} />
     </Switch>

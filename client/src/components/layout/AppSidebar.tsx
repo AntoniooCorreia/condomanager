@@ -1,6 +1,6 @@
 import { 
   Building2, LayoutDashboard, Users, CreditCard, HardHat, 
-  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera
+  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -30,6 +30,7 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const isAdmin = user?.role === "admin";
+  const isCondomino = user?.userType === "condomino" || user?.userType === "gestor";
 
   const adminLinks = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -42,9 +43,10 @@ export function AppSidebar() {
     { title: "Câmeras CCTV", url: "/admin/camaras", icon: Camera },
   ];
 
-  const userLinks = [
+  const baseUserLinks = [
     { title: "Dashboard", url: "/user", icon: LayoutDashboard },
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
+    ...(isCondomino ? [{ title: "Cobranças", url: "/user/cobrancas", icon: Receipt }] : []),
     { title: "Reservar Áreas", url: "/user/reservar", icon: Calendar },
     { title: "Obras no Edifício", url: "/user/obras", icon: HardHat },
     { title: "Ocorrências", url: "/user/seguranca", icon: ShieldAlert },
@@ -52,7 +54,7 @@ export function AppSidebar() {
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
-  const links = isAdmin ? adminLinks : userLinks;
+  const links = isAdmin ? adminLinks : baseUserLinks;
 
   return (
     <Sidebar variant="inset">
