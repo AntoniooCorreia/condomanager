@@ -90,6 +90,23 @@ export const securityLogsRelations = relations(securityLogs, ({ one }) => ({
   }),
 }));
 
+export const convocatorias = pgTable("convocatorias", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull().default("standard"), // "standard" | "custom"
+  title: text("title").notNull(),
+  location: text("location").notNull(),
+  date: timestamp("date").notNull(),
+  time: text("time").notNull(),
+  meetingRoom: text("meeting_room").notNull(),
+  workOrders: text("work_orders").array(),
+  secondDate: timestamp("second_date"),
+  secondTime: text("second_time"),
+  customContent: text("custom_content"),
+  status: text("status").notNull().default("draft"), // "draft" | "sent"
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -112,6 +129,7 @@ export const insertWorkSchema = createInsertSchema(works).omit({ id: true });
 export const insertReservationSchema = createInsertSchema(reservations).omit({ id: true });
 export const insertSecurityLogSchema = createInsertSchema(securityLogs).omit({ id: true, date: true });
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({ id: true, startDate: true });
+export const insertConvocatoriaSchema = createInsertSchema(convocatorias).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -126,3 +144,5 @@ export type SecurityLog = typeof securityLogs.$inferSelect;
 export type InsertSecurityLog = z.infer<typeof insertSecurityLogSchema>;
 export type PaymentSchedule = typeof paymentSchedules.$inferSelect;
 export type InsertPaymentSchedule = z.infer<typeof insertPaymentScheduleSchema>;
+export type Convocatoria = typeof convocatorias.$inferSelect;
+export type InsertConvocatoria = z.infer<typeof insertConvocatoriaSchema>;
