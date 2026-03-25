@@ -1,0 +1,67 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K12:06:15 AM [express] serving on port 5000
+12:06:18 AM [express] GET /api/payments 304 in 4ms :: [{"id":4,"userId":9,"amount":"124","status":"pending","dueDate":"2026-02-10T00:00:00.000Z","description":"Frigorifico estragado"}]
+12:06:18 AM [express] GET /api/users 304 in 2ms :: [{"id":1,"username":"admin","password":"password","role":"admin","name":"Administrador","unit":null,"avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":2,"username":"user","password":"password","role":"user","name":"João Silva","unit":"101A","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":3,"username":"joao.silva","password":"asas","role":"user","name":"Morador","unit":"101A","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":4,"username":"sx","password":"xs","role":"user","name":"Morador","unit":"101A","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":7,"username":"123@gmail","password":"123","role":"user","name":"123","unit":"123","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":8,"username":"231123@gmail","password":"123","role":"user","name":"123","unit":"123","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":9,"username":"antonioteste@gmail.com","password":"teste","role":"user","name":"Antonio Correia","unit":"antonioteste","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":10,"username":"antoniooc.net@gmail.com","password":"antonio","role":"user","name":"Antonio Correiaa","unit":"123312321","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":11,"username":"luis@gmail.com","password":"123","role":"user","name":"Luis","unit":"109B","avatar":null,"userType":"arrendatario","relatedCondominoId":9}]
+12:06:18 AM [express] GET /api/reservations 304 in 14ms :: [{"id":1,"userId":2,"area":"pool","date":"2026-03-06T23:49:52.546Z","status":"approved"}]
+12:06:23 AM [express] GET /api/works 304 in 2ms :: [{"id":5,"title":"portao novo","description":"","status":"planning","startDate":null,"endDate":null,"cost":"14000","assignedUserIds":[2,3,7]}]
+12:06:24 AM [express] GET /api/security-logs 304 in 2ms :: [{"id":1,"reportedBy":2,"description":"Porta da garagem não fecha","date":"2026-03-04T23:49:52.553Z","status":"resolved"},{"id":2,"reportedBy":1,"description":"dsf","date":"2026-03-05T00:20:20.739Z","status":"open"}]
+12:06:51 AM [express] POST /api/auth/logout 200 in 1ms :: {"message":"Logged out"}
+12:07:00 AM [express] POST /api/auth/login 401 in 15ms :: {"message":"Credenciais inválidas"}
+12:07:21 AM [express] GET /api/security-logs 304 in 14ms :: [{"id":1,"reportedBy":2,"description":"Porta da garagem não fecha","date":"2026-03-04T23:49:52.553Z","status":"resolved"},{"id":2,"reportedBy":1,"description":"dsf","date":"2026-03-05T00:20:20.739Z","status":"open"}]
+12:07:21 AM [express] GET /api/works 304 in 14ms :: [{"id":5,"title":"portao novo","description":"","status":"planning","startDate":null,"endDate":null,"cost":"14000","assignedUserIds":[2,3,7]}]
+12:07:21 AM [express] GET /api/payments 304 in 14ms :: [{"id":4,"userId":9,"amount":"124","status":"pending","dueDate":"2026-02-10T00:00:00.000Z","description":"Frigorifico estragado"}]
+12:07:21 AM [express] GET /api/users 304 in 13ms :: [{"id":1,"username":"admin","password":"password","role":"admin","name":"Administrador","unit":null,"avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":2,"username":"user","password":"password","role":"user","name":"João Silva","unit":"101A","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":3,"username":"joao.silva","password":"asas","role":"user","name":"Morador","unit":"101A","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":4,"username":"sx","password":"xs","role":"user","name":"Morador","unit":"101A","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":7,"username":"123@gmail","password":"123","role":"user","name":"123","unit":"123","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":8,"username":"231123@gmail","password":"123","role":"user","name":"123","unit":"123","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":9,"username":"antonioteste@gmail.com","password":"teste","role":"user","name":"Antonio Correia","unit":"antonioteste","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":10,"username":"antoniooc.net@gmail.com","password":"antonio","role":"user","name":"Antonio Correiaa","unit":"123312321","avatar":null,"userType":"condomino","relatedCondominoId":null},{"id":11,"username":"luis@gmail.com","password":"123","role":"user","name":"Luis","unit":"109B","avatar":null,"userType":"arrendatario","relatedCondominoId":9}]
+12:07:23 AM [express] GET /api/reservations 304 in 2ms :: [{"id":1,"userId":2,"area":"pool","date":"2026-03-06T23:49:52.546Z","status":"approved"}]
+12:07:39 AM [express] POST /api/auth/logout 200 in 0ms :: {"message":"Logged out"}
+12:07:44 AM [express] POST /api/auth/login 200 in 11ms :: {"id":10,"username":"antoniooc.net@gmail.com","password":"antonio","role":"user","name":"Antonio Correiaa","unit":"123312321","avatar":null,"userType":"condomino","relatedCondominoId":null}
+12:07:50 AM [express] POST /api/auth/logout 200 in 1ms :: {"message":"Logged out"}
+12:07:53 AM [express] POST /api/auth/login 401 in 2ms :: {"message":"Credenciais inválidas"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m12:08:32 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/admin/AdminDashboard.tsx, /src/pages/admin/Condominos.tsx, /src/pages/shared/Seguranca.tsx, /src/pages/user/UserHome.tsx, /src/pages/shared/Reservas.tsx, /src/pages/admin/Financeiro.tsx, /src/pages/shared/Obras.tsx, /src/pages/user/UserPagamentos.tsx, /src/pages/user/UserPerfil.tsx, /src/index.css[22m
