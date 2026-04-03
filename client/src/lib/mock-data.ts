@@ -1,4 +1,4 @@
-import { User, Payment, Work, Reservation, SecurityLog } from "client/shared/schema";
+import { User, Payment, Work, Reservation, SecurityLog } from "@/shared/schema";
 
 export const MOCK_USERS: User[] = [
   { id: 1, username: "admin", password: "password", role: "admin", name: "System Admin", unit: "Office" },

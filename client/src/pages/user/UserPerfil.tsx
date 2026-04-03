@@ -7,7 +7,7 @@ import { UserCircle, Save, Camera, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, type User } from "client/shared/schema";
+import { insertUserSchema, type User } from "@/shared/schema";
 import { useUpdateUser } from "@/hooks/use-condominium";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";

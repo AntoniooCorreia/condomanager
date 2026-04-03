@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "../../shared/schema";
+import { User } from "../shared/schema";
 import { MOCK_USERS } from "@/lib/mock-data";
-import { api } from "../../shared/routes";
+import { api } from "../shared/routes";
 import { useLocation } from "wouter";
 
 interface AuthContextType {

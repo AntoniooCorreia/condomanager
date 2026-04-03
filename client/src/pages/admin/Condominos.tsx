@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, type InsertUser, type User } from "client/shared/schema";
+import { insertUserSchema, type InsertUser, type User } from "@/shared/schema";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 

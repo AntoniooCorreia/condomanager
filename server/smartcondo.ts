@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import {
   users, payments, reservations, works, securityLogs,
   paymentSchedules, conversations, chatMessages
-} from "client/shared/schema";
+} from "@/shared/schema";
 
 // 🔧 IA DESATIVADA
 const AI_ENABLED = false;
