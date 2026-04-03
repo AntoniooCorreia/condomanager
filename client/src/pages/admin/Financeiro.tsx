@@ -30,7 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPaymentSchema, type InsertPayment } from "@/schema";
+import { insertPaymentSchema, type InsertPayment } from "@shared/schema";
 import { useState } from "react";
 
 export function Financeiro() {
