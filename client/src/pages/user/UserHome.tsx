@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPaymentSchema, insertPaymentScheduleSchema, type InsertPayment, type InsertPaymentSchedule } from "@shared/schema";
+import { insertPaymentSchema, insertPaymentScheduleSchema, type InsertPayment, type InsertPaymentSchedule } from "client/shared/schema";
 
 export function UserHome() {
   const { user } = useAuth();

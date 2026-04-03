@@ -7,7 +7,7 @@ import {
   reservations, type Reservation, type InsertReservation,
   securityLogs, type SecurityLog, type InsertSecurityLog,
   paymentSchedules, type PaymentSchedule, type InsertPaymentSchedule
-} from "@shared/schema";
+} from "client/shared/schema";
 
 export interface IStorage {
   // users

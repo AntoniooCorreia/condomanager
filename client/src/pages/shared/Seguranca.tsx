@@ -25,7 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSecurityLogSchema, type InsertSecurityLog } from "@shared/schema";
+import { insertSecurityLogSchema, type InsertSecurityLog } from "client/shared/schema";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 

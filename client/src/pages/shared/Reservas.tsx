@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertReservationSchema, type InsertReservation } from "@shared/schema";
+import { insertReservationSchema, type InsertReservation } from "client/shared/schema";
 import { useState } from "react";
 
 const AREA_LABELS: Record<string, string> = {
