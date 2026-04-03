@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "client/shared/routes";
+import { api, buildUrl } from "@shared/routes";
 import { User, Payment, Work, Reservation, SecurityLog, InsertUser, PaymentSchedule, InsertPaymentSchedule } from "@/shared/schema";
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_WORKS, MOCK_RESERVATIONS, MOCK_SECURITY_LOGS, fetchWithMockFallback } from "@/lib/mock-data";
 import { apiRequest } from "@/lib/queryClient";
