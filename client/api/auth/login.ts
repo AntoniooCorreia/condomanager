@@ -1,7 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { db } from "../_db";
-import { users } from "../../client/src/shared/schema";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pkg from "pg";
+import { users } from "../../shared/schema";
 import { eq } from "drizzle-orm";
+
+const { Pool } = pkg;
+const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { users } });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).end();
