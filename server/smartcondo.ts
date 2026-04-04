@@ -1,15 +1,15 @@
-// smartcondo.ts — versão sem OpenAI
-
-// ❌ Removido: import OpenAI from "openai";
+import OpenAI from "openai";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import {
   users, payments, reservations, works, securityLogs,
   paymentSchedules, conversations, chatMessages
-} from "@/shared/schema";
+} from "@shared/schema";
 
-// 🔧 IA DESATIVADA
-const AI_ENABLED = false;
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 async function buildContext(userId: number) {
   const [
@@ -39,11 +39,8 @@ async function buildContext(userId: number) {
     p => p.status === "pending" && new Date(p.dueDate) < today
   );
 
-  const areaNames: Record<string, string> = {
-    pool: "Piscina",
-    gym: "Ginásio",
-    party_room: "Salão de Festas"
-  };
+  const areas = ["pool", "gym", "party_room"];
+  const areaNames: Record<string, string> = { pool: "Piscina", gym: "Ginásio", party_room: "Salão de Festas" };
 
   return `Hoje é ${todayStr}.
 
@@ -68,7 +65,14 @@ OBRAS EM CURSO:
 ${allWorks.length === 0 ? "Nenhuma obra." : allWorks.map(w => `  • ${w.title} — Estado: ${w.status}`).join("\n")}
 
 OCORRÊNCIAS DE SEGURANÇA:
-${secLogs.filter(s => s.status === "open").length} ocorrências abertas.`;
+${secLogs.filter(s => s.status === "open").length} ocorrências abertas.
+
+REGRAS DO CONDOMÍNIO:
+- Reservas devem ser feitas com antecedência.
+- Cada fração pode ter apenas uma reserva por área por dia.
+- Piscina: disponível todos os dias.
+- Ginásio: disponível todos os dias.
+- Salão de Festas: disponível para reserva em datas sem outros eventos.`;
 }
 
 export async function getOrCreateConversation(userId: number) {
@@ -91,14 +95,14 @@ export async function smartCondoChat(
   userMessage: string,
   res: any
 ) {
-  // Guarda a mensagem do utilizador
+  // Save user message
   await db.insert(chatMessages).values({
     conversationId,
     role: "user",
     content: userMessage,
   });
 
-  // Carrega histórico
+  // Get conversation history (last 10 messages)
   const history = await db.select().from(chatMessages)
     .where(eq(chatMessages.conversationId, conversationId))
     .orderBy(chatMessages.createdAt)
@@ -106,34 +110,58 @@ export async function smartCondoChat(
 
   const context = await buildContext(userId);
 
-  // IA DESATIVADA → resposta automática
-  if (!AI_ENABLED) {
-    const fallbackResponse = `
-⚠️ A funcionalidade de assistente inteligente (IA) está temporariamente desativada.
+  const systemPrompt = `És o SmartCondo, o assistente inteligente do Condomínio Prestige. 
+Respondes sempre em português de Portugal (pt-PT).
+Tens acesso aos dados reais do condomínio e ajudas os moradores com questões sobre:
+- Reservas de áreas comuns (piscina, ginásio, salão de festas)
+- Pagamentos e quotas
+- Obras e manutenção
+- Segurança e ocorrências
+- Informações gerais do edifício
 
-Ainda assim, aqui está um resumo útil da sua situação atual:
+Quando te perguntam sobre disponibilidade de reservas, verifica as reservas existentes e responde com precisão.
+Sê simpático, direto e útil. Usa linguagem acessível.
 
-${context}
+DADOS ATUAIS DO SISTEMA:
+${context}`;
 
-Se precisar de ajuda com reservas, pagamentos ou informações do condomínio, posso guiá-lo com base nos dados reais do sistema.
-    `.trim();
+  const messages: any[] = [
+    { role: "system", content: systemPrompt },
+    ...history.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
+    { role: "user", content: userMessage },
+  ];
 
-    // Guarda resposta
-    await db.insert(chatMessages).values({
-      conversationId,
-      role: "assistant",
-      content: fallbackResponse,
-    });
+  // Stream response
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
 
-    // Envia via SSE
-    res.setHeader("Content-Type", "text/event-stream");
-    res.write(`data: ${JSON.stringify({ content: fallbackResponse })}\n\n`);
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
-    return;
+  const stream = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages,
+    stream: true,
+    max_tokens: 600,
+  });
+
+  let fullResponse = "";
+
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content || "";
+    if (content) {
+      fullResponse += content;
+      res.write(`data: ${JSON.stringify({ content })}\n\n`);
+    }
   }
 
-  // (Se um dia ativares IA, aqui voltamos a colocar o código da OpenAI)
+  // Save assistant response
+  await db.insert(chatMessages).values({
+    conversationId,
+    role: "assistant",
+    content: fullResponse,
+  });
+
+  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+  res.end();
 }
 
 export async function getChatHistory(conversationId: number) {
