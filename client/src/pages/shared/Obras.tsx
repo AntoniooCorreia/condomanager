@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { HardHat, Plus, Calendar as CalendarIcon, DollarSign, Trash2, Users as UsersIcon, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import ptBR from "date-fns/locale/pt-BR";
+import { ptBR } from "date-fns/locale/pt-BR";
 import {
   Dialog,
   DialogContent,
@@ -194,7 +194,7 @@ export function Obras() {
                                             ? field.onChange([...(field.value || []), res.id])
                                             : field.onChange(
                                                 field.value?.filter(
-                                                  (value) => value !== res.id
+                                                  (value: any) => value !== res.id
                                                 )
                                               )
                                         }}
@@ -264,7 +264,7 @@ export function Obras() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           <p className="text-muted-foreground">A carregar...</p>
-        ) : filteredWorks.length === 0 ? (
+        ) : (filteredWorks ?? []).length === 0 ? (
           <div className="col-span-full text-center p-8 text-muted-foreground">
             {isAdmin ? "Nenhuma obra registada." : "Não tem obras associadas."}
           </div>
