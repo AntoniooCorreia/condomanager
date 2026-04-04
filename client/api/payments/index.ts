@@ -1,10 +1,20 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { pgTable, text, serial, integer, timestamp, numeric } from "drizzle-orm/pg-core";
 import pkg from "pg";
-import { payments } from "../schema";
 import { eq } from "drizzle-orm";
 
 const { Pool } = pkg;
+
+const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  amount: numeric("amount").notNull(),
+  status: text("status").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  description: text("description").notNull(),
+});
+
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { payments } });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

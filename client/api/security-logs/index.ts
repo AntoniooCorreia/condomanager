@@ -1,10 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import pkg from "pg";
-import { securityLogs } from "../schema";
 import { eq } from "drizzle-orm";
 
 const { Pool } = pkg;
+
+const securityLogs = pgTable("security_logs", {
+  id: serial("id").primaryKey(),
+  reportedBy: integer("reported_by"),
+  description: text("description").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  status: text("status").notNull(),
+});
+
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { securityLogs } });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
