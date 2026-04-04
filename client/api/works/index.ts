@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pkg from "pg";
-import { works } from "./src/shared/schema";
+import { works } from "../../src/shared/schema";
 import { eq } from "drizzle-orm";
 
 const { Pool } = pkg;
