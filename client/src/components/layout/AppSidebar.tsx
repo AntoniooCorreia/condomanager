@@ -61,7 +61,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
           <div className="flex items-center px-4 py-6 mb-2">
-            <img src="/logoFullpng.png" alt="Logo" className="w-40" />
+            <img src="/logoazulpng.png" alt="Logo" className="w-40" />
           </div>
           
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold opacity-70">
