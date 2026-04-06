@@ -1,5 +1,5 @@
 import { 
-  Building2, LayoutDashboard, Users, CreditCard, HardHat, 
+  LayoutDashboard, Users, CreditCard, HardHat, 
   Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -60,14 +60,8 @@ export function AppSidebar() {
     <Sidebar variant="inset">
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-          <div className="flex items-center gap-3 px-4 py-6 mb-2">
-            <div className="bg-primary/10 p-2 rounded-xl text-primary">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="font-display font-bold text-lg text-sidebar-foreground leading-none">Prestige</h1>
-              <p className="text-xs text-muted-foreground mt-1">Condominium Mgt.</p>
-            </div>
+          <div className="flex items-center px-4 py-6 mb-2">
+            <img src="/logoFullpng.png" alt="Logo" className="w-40" />
           </div>
           
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold opacity-70">

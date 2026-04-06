@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Building2, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Building2, ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -56,9 +56,7 @@ export default function Login() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="bg-white/20 p-4 rounded-2xl w-fit mb-8 backdrop-blur-md">
-              <Building2 className="w-12 h-12" />
-            </div>
+            <img src="/logoFullpng.png" alt="Logo" className="w-56 mb-8" />
             <h1 className="text-5xl font-display font-bold leading-tight mb-6">
               Gestão inteligente para o seu condomínio.
             </h1>
