@@ -19,7 +19,7 @@ export default function Login() {
 
   // Redirect if already logged in
   if (user) {
-    setLocation(user.role === "admin" ? "/admin" : "/user");
+    setLocation(user.role === "admin" || user.role === "gestor" ? "/admin" : "/user");
     return null;
   }
 

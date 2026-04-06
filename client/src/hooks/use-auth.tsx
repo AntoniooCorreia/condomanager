@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         setUser(data);
         localStorage.setItem("current_user", JSON.stringify(data));
+        setLocation(data.role === "admin" || data.role === "gestor" ? "/admin" : "/user");
       } else {
         throw new Error("Login failed");
       }
