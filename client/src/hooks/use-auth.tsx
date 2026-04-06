@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User } from "../shared/schema";
-import { MOCK_USERS } from "@/lib/mock-data";
 import { api } from "../shared/routes";
 import { useLocation } from "wouter";
 
@@ -19,7 +18,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Try to restore session from localStorage first
     const stored = localStorage.getItem("current_user");
     if (stored) {
       try {
@@ -32,36 +30,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    try {
-      const res = await fetch(api.auth.login.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-        localStorage.setItem("current_user", JSON.stringify(data));
-        setLocation(data.role === "admin" || data.role === "gestor" ? "/admin" : "/user");
-      } else {
-        throw new Error("Login failed");
-      }
-    } catch (error) {
-      // Mock fallback
-      const mockUser = MOCK_USERS.find((u) => u.username === username);
-      if (mockUser) {
-        setUser(mockUser);
-        localStorage.setItem("current_user", JSON.stringify(mockUser));
-      } else {
-        throw new Error("Invalid credentials");
-      }
+    const res = await fetch(api.auth.login.path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Credenciais inválidas");
     }
+
+    const data = await res.json();
+    setUser(data);
+    localStorage.setItem("current_user", JSON.stringify(data));
+    setLocation(data.role === "admin" || data.role === "gestor" ? "/admin" : "/user");
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("current_user");
-    localStorage.removeItem("mock_user");
     fetch(api.auth.logout.path, { method: "POST" }).catch(() => {});
     setLocation("/");
   };
