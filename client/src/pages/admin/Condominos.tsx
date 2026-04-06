@@ -56,7 +56,9 @@ export function Condominos() {
     },
   });
 
-  const onSubmit = (data: InsertUser) => {
+  const onSubmit = (data: any) => {
+    if (data.userType === "gestor") data.role = "admin";
+    else data.role = "user";
     if (!data.username || !data.password || !data.name || !data.unit) {
       toast({ title: "Erro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
       return;
