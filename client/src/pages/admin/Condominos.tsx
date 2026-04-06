@@ -41,7 +41,7 @@ export function Condominos() {
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const residents = users?.filter(u => u.role === 'user') || [];
+  const residents = users?.filter(u => u.username !== 'admin') || [];
 
   const form = useForm<InsertUser & { userType?: string; relatedCondominoId?: number }>({
     resolver: zodResolver(insertUserSchema),
