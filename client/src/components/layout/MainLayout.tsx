@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { Loader2, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SmartCondoChat } from "@/components/SmartCondoChat";
+
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -62,7 +62,7 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
           </main>
         </div>
       </div>
-      <SmartCondoChat />
+      
     </SidebarProvider>
   );
 }
