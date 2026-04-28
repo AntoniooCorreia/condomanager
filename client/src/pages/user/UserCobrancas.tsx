@@ -47,7 +47,7 @@ export function UserCobrancas() {
   const [selectedTenant, setSelectedTenant] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  const myTenants = users?.filter(u => u.relatedCondominoId === user?.id) || [];
+  const myTenants = users?.filter(u => Number(u.relatedCondominoId) === user?.id) || [];
   const mySchedules = schedules?.filter(s => s.condominoId === user?.id) || [];
 
   const tenantPayments = (tenantId: number) =>
