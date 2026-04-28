@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+﻿import { ReactNode } from "react";
+import { FloatingChat } from "@/components/FloatingChat";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/use-auth";
@@ -64,5 +65,6 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
       </div>
       
     </SidebarProvider>
+      <FloatingChat />
   );
 }
