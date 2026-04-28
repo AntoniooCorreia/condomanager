@@ -1,4 +1,4 @@
-﻿import { 
+import { 
   LayoutDashboard, Users, CreditCard, HardHat, 
   Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt
 } from "lucide-react";
