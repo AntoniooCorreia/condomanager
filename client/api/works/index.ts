@@ -22,7 +22,7 @@ const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { s
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const id = req.query.id ? Number(req.query.id) : null;
 
-  if (req.method === "GET") {
+  if (req.method === "GET" && !id) {
     const all = await db.select().from(works);
     return res.status(200).json(all);
   }
@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (req.method === "PUT" && id) {
     const [updated] = await db.update(works).set(req.body).where(eq(works.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "Não encontrado" });
+    if (!updated) return res.status(404).json({ message: "Nao encontrado" });
     return res.status(200).json(updated);
   }
   if (req.method === "DELETE" && id) {
