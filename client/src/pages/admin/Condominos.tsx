@@ -41,13 +41,13 @@ export function Condominos() {
 
   const onSubmit = (data: any) => {
     if (data.userType === "arrendatario" && !data.relatedCondominoId) {
-      toast({ title: "Erro", description: "Selecione o cond�mino associado ao arrendat�rio.", variant: "destructive" });
+      toast({ title: "Erro", description: "Selecione o condómino associado ao arrendatário.", variant: "destructive" });
       return;
     }
     if (data.userType === "gestor") data.role = "admin";
     else data.role = "user";
     if (!data.username || !data.password || !data.name || !data.unit) {
-      toast({ title: "Erro", description: "Todos os campos s�o obrigat�rios.", variant: "destructive" });
+      toast({ title: "Erro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
       return;
     }
     if (editingUser) {
@@ -94,7 +94,7 @@ export function Condominos() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="unit" render={({ field }) => (
-              <FormItem><FormLabel>Fra��o</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Fração</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome" {...field} /></FormControl><FormMessage /></FormItem>
@@ -111,9 +111,9 @@ export function Condominos() {
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="gestor">Gestor de Condom�nio</SelectItem>
-                    <SelectItem value="condomino">Cond�mino</SelectItem>
-                    <SelectItem value="arrendatario">Arrendat�rio</SelectItem>
+                    <SelectItem value="gestor">Gestor de Condomínio</SelectItem>
+                    <SelectItem value="condomino">Condómino</SelectItem>
+                    <SelectItem value="arrendatario">Arrendatário</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -122,7 +122,7 @@ export function Condominos() {
             {form.watch("userType") === "arrendatario" && (
               <FormField control={form.control} name="relatedCondominoId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cond�mino Associado</FormLabel>
+                  <FormLabel>Condómino Associado</FormLabel>
                   <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cond�mino" /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -148,16 +148,16 @@ export function Condominos() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold">Cond�minos</h1>
-          <p className="text-muted-foreground mt-1">Gest�o de residentes e arrendat�rios.</p>
+          <h1 className="text-3xl font-display font-bold">Condóminos</h1>
+          <p className="text-muted-foreground mt-1">Gestão de residentes e arrendatários.</p>
         </div>
         <DialogForm />
       </div>
 
       <Tabs defaultValue="condominos">
         <TabsList className="mb-6">
-          <TabsTrigger value="condominos"><Home className="w-4 h-4 mr-2" />Cond�minos ({residents.length})</TabsTrigger>
-          <TabsTrigger value="arrendatarios"><Users className="w-4 h-4 mr-2" />Arrendat�rios ({arrendatarios.length})</TabsTrigger>
+          <TabsTrigger value="condominos"><Home className="w-4 h-4 mr-2" />Condóminos ({residents.length})</TabsTrigger>
+          <TabsTrigger value="arrendatarios"><Users className="w-4 h-4 mr-2" />Arrendatários ({arrendatarios.length})</TabsTrigger>
         </TabsList>
 
         {/* ABA COND�MINOS */}
@@ -167,18 +167,18 @@ export function Condominos() {
               <Table>
                 <TableHeader className="bg-secondary/50">
                   <TableRow className="border-border/50">
-                    <TableHead>Fra��o</TableHead>
+                    <TableHead>Fração</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Utilizador</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">A��es</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">A carregar...</TableCell></TableRow>
                   ) : residents.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum cond�mino encontrado.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum condómino encontrado.</TableCell></TableRow>
                   ) : residents.map((user) => (
                     <TableRow key={user.id} className="group border-border/50 hover:bg-secondary/20">
                       <TableCell className="font-bold text-primary">{user.unit}</TableCell>
@@ -212,7 +212,7 @@ export function Condominos() {
               {arrendatarios.length === 0 ? (
                 <Card className="p-8 text-center border-dashed">
                   <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">Sem arrendat�rios</p>
+                  <p className="text-muted-foreground font-medium">Sem arrendatários</p>
                 </Card>
               ) : arrendatarios.map((tenant, i) => {
                 const { overdue, pending } = getTenantStats(tenant.id);
@@ -230,7 +230,7 @@ export function Condominos() {
                           </div>
                           <div>
                             <p className="font-bold text-sm">{tenant.name}</p>
-                            <p className="text-xs text-muted-foreground">Fra��o {tenant.unit}</p>
+                            <p className="text-xs text-muted-foreground">Fração {tenant.unit}</p>
                             {condominoAssoc && <p className="text-xs text-primary">? {condominoAssoc.name}</p>}
                           </div>
                         </div>
@@ -267,8 +267,8 @@ export function Condominos() {
                           </div>
                           <div>
                             <h2 className="font-display font-bold text-xl">{selectedTenant.name}</h2>
-                            <p className="text-muted-foreground text-sm">Fra��o {selectedTenant.unit} � {selectedTenant.username}</p>
-                            {condominoAssoc && <p className="text-xs text-primary mt-1">Cond�mino: {condominoAssoc.name} (Fra��o {condominoAssoc.unit})</p>}
+                            <p className="text-muted-foreground text-sm">Fração {selectedTenant.unit} - {selectedTenant.username}</p>
+                            {condominoAssoc && <p className="text-xs text-primary mt-1">Condómino: {condominoAssoc.name} (Fração {condominoAssoc.unit})</p>}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -294,24 +294,24 @@ export function Condominos() {
                       </Card>
                     </div>
 
-                    {/* Pr�ximo pagamento */}
+                    {/* Próximo pagamento */}
                     {nextPayment && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Pr�ximo Pagamento</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Próximo Pagamento</p>
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-bold">{nextPayment.description}</p>
                             <p className="text-sm text-muted-foreground">Vence a {format(new Date(nextPayment.dueDate), "dd 'de' MMMM", { locale: ptBR })}</p>
                           </div>
-                          <p className="font-bold text-lg text-primary">�{Number(nextPayment.amount).toFixed(2)}</p>
+                          <p className="font-bold text-lg text-primary">€{Number(nextPayment.amount).toFixed(2)}</p>
                         </div>
                       </Card>
                     )}
 
-                    {/* Pr�xima reserva */}
+                    {/* Próxima reserva */}
                     {nextReservation && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Pr�xima Reserva</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Próxima Reserva</p>
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-primary" />
                           <div>
@@ -325,7 +325,7 @@ export function Condominos() {
                     {/* Agendamentos */}
                     {tenantSchedules.length > 0 && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cobran�as Peri�dicas</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cobranças Periódicas</p>
                         <div className="space-y-2">
                           {tenantSchedules.map(s => (
                             <div key={s.id} className="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-2 text-sm">
@@ -333,7 +333,7 @@ export function Condominos() {
                                 <RepeatIcon className="w-3 h-3" />
                                 <span>{s.description}</span>
                               </div>
-                              <span className="font-bold text-blue-700">�{s.amount}/m�s � dia {s.dayOfMonth}</span>
+                              <span className="font-bold text-blue-700">€{s.amount}/mês no dia {s.dayOfMonth}</span>
                             </div>
                           ))}
                         </div>
@@ -349,7 +349,7 @@ export function Condominos() {
                             <div key={p.id} className="flex items-center justify-between text-sm">
                               <span className="font-medium">{p.description}</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-rose-600 font-bold">�{Number(p.amount).toFixed(2)}</span>
+                                <span className="text-rose-600 font-bold">€{Number(p.amount).toFixed(2)}</span>
                                 <span className="text-xs text-muted-foreground">venceu {format(new Date(p.dueDate), "dd MMM", { locale: ptBR })}</span>
                               </div>
                             </div>
