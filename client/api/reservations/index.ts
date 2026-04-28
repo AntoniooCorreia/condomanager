@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import pkg from "pg";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const { Pool } = pkg;
 
@@ -17,25 +17,40 @@ const reservations = pgTable("reservations", {
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { reservations } });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const id = req.query.id ? Number(req.query.id) : null;
-
   if (req.method === "GET") {
     const all = await db.select().from(reservations);
     return res.status(200).json(all);
   }
+
   if (req.method === "POST") {
-    const { userId, area, date, status } = req.body;
-    const [created] = await db.insert(reservations).values({ userId: Number(userId), area, date: new Date(date), status: status || "pending" }).returning();
+    const { userId, area, date } = req.body;
+    const reservationDate = new Date(date);
+
+    // Verificar se já existe reserva aprovada para o mesmo espaço e hora
+    const existing = await db.select().from(reservations).where(
+      and(
+        eq(reservations.area, area),
+        eq(reservations.status, "approved")
+      )
+    );
+
+    // Verificar conflito de hora (dentro de 1 hora)
+    const hasConflict = existing.some(r => {
+      const diff = Math.abs(new Date(r.date).getTime() - reservationDate.getTime());
+      return diff < 60 * 60 * 1000; // 1 hora em milissegundos
+    });
+
+    const status = hasConflict ? "pending" : "approved";
+
+    const [created] = await db.insert(reservations).values({
+      userId: Number(userId),
+      area,
+      date: reservationDate,
+      status
+    }).returning();
+
     return res.status(201).json(created);
   }
-  if (req.method === "PUT" && id) {
-    const [updated] = await db.update(reservations).set(req.body).where(eq(reservations.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "Não encontrado" });
-    return res.status(200).json(updated);
-  }
-  if (req.method === "DELETE" && id) {
-    await db.delete(reservations).where(eq(reservations.id, id));
-    return res.status(204).end();
-  }
+
   return res.status(405).end();
 }
