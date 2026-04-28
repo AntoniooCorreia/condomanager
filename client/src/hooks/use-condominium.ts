@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { User, Payment, Work, Reservation, SecurityLog, InsertUser, PaymentSchedule, InsertPaymentSchedule } from "@/shared/schema";
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_WORKS, MOCK_RESERVATIONS, MOCK_SECURITY_LOGS, fetchWithMockFallback } from "@/lib/mock-data";
@@ -111,9 +111,9 @@ export function useDeletePayment() {
 // --- PAYMENT SCHEDULES ---
 export function usePaymentSchedules() {
   return useQuery<PaymentSchedule[]>({
-    queryKey: ["/api/payment-schedules"],
+    queryKey: ["/api/payments?resource=schedules"],
     queryFn: async () => {
-      const res = await fetch("/api/payment-schedules");
+      const res = await fetch("/api/payments?resource=schedules");
       if (!res.ok) return [];
       return res.json();
     },
@@ -124,10 +124,10 @@ export function useCreatePaymentSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: InsertPaymentSchedule) => {
-      const res = await apiRequest("POST", "/api/payment-schedules", data);
+      const res = await apiRequest("POST", "/api/payments?resource=schedules", data);
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/payment-schedules"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/payments?resource=schedules"] }),
   });
 }
 
@@ -135,9 +135,9 @@ export function useDeletePaymentSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/payment-schedules/${id}`);
+      await apiRequest("DELETE", `/api/payments/${id}?resource=schedules`);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/payment-schedules"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/payments?resource=schedules"] }),
   });
 }
 
