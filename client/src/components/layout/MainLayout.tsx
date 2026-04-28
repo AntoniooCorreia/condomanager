@@ -1,4 +1,4 @@
-﻿import { ReactNode } from "react";
+import { ReactNode } from "react";
 import { FloatingChat } from "@/components/FloatingChat";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -7,7 +7,6 @@ import { Redirect } from "wouter";
 import { Loader2, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-
 interface MainLayoutProps {
   children: ReactNode;
   requireAdmin?: boolean;
@@ -15,7 +14,6 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) {
   const { user, isLoading } = useAuth();
-
   const style = {
     "--sidebar-width": "18rem",
     "--sidebar-width-icon": "4rem",
@@ -33,7 +31,7 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
     return <Redirect to="/" />;
   }
 
-  if (requireAdmin && user.role !== "admin" && user.role !== "administrador" && user.userType !== "administrador") {
+  if (requireAdmin && user.role !== "admin" && user.userType !== "gestor") {
     return <Redirect to="/user" />;
   }
 
@@ -46,7 +44,7 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground hover:bg-black/5" />
               <h2 className="font-display font-semibold text-lg hidden sm:block">
-                Bom dia, {user.name.split(' ')[0]}
+                Bom dia, {user.name.split(" ")[0]}
               </h2>
             </div>
             <div className="flex items-center gap-4">
@@ -63,8 +61,7 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
           </main>
         </div>
       </div>
-      
-    </SidebarProvider>
       <FloatingChat />
+    </SidebarProvider>
   );
 }
