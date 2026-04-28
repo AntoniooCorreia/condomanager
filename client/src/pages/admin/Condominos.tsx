@@ -57,6 +57,10 @@ export function Condominos() {
   });
 
   const onSubmit = (data: any) => {
+    if (data.userType === "arrendatario" && !data.relatedCondominoId) {
+      toast({ title: "Erro", description: "Selecione o condómino associado ao arrendatário.", variant: "destructive" });
+      return;
+    }
     if (data.userType === "gestor") data.role = "admin";
     else data.role = "user";
     if (!data.username || !data.password || !data.name || !data.unit) {
