@@ -5,52 +5,40 @@ import {
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const isAdmin = user?.role === "admin";
-  const isProprietário = user?.userType === "Proprietário" || user?.userType === "administrador";
+  const isCondomino = user?.userType === "condomino" || user?.userType === "gestor";
 
   const adminLinks = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-    { title: "Proprietários", url: "/admin/Proprietários", icon: Users },
+    { title: "Utilizadores", url: "/admin/utilizadores", icon: Users },
     { title: "Financeiro", url: "/admin/financeiro", icon: CreditCard },
     { title: "Obras", url: "/admin/obras", icon: HardHat },
     { title: "Reservas", url: "/admin/reservas", icon: Calendar },
-    { title: "Utilizadores", url: "/admin/utilizadores", icon: UserCircle },
-    { title: "Segurança", url: "/admin/seguranca", icon: ShieldAlert },
-    { title: "Câmeras CCTV", url: "/admin/camaras", icon: Camera },
+    { title: "Seguranca", url: "/admin/seguranca", icon: ShieldAlert },
+    { title: "Cameras CCTV", url: "/admin/camaras", icon: Camera },
   ];
 
   const baseUserLinks = [
     { title: "Dashboard", url: "/user", icon: LayoutDashboard },
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
-    ...(isProprietário ? [{ title: "Cobranças", url: "/user/cobrancas", icon: Receipt }] : []),
-    { title: "Reservar Áreas", url: "/user/reservar", icon: Calendar },
-    { title: "Obras no Edifício", url: "/user/obras", icon: HardHat },
-    { title: "Ocorrências", url: "/user/seguranca", icon: ShieldAlert },
-    { title: "Câmeras CCTV", url: "/user/camaras", icon: Camera },
+    ...(isCondomino ? [{ title: "Cobrancas", url: "/user/cobrancas", icon: Receipt }] : []),
+    { title: "Reservar Areas", url: "/user/reservar", icon: Calendar },
+    { title: "Obras no Edificio", url: "/user/obras", icon: HardHat },
+    { title: "Ocorrencias", url: "/user/seguranca", icon: ShieldAlert },
+    { title: "Cameras CCTV", url: "/user/camaras", icon: Camera },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
@@ -63,9 +51,9 @@ export function AppSidebar() {
           <div className="flex items-center px-4 py-6 mb-2">
             <img src="/logoazulpng.png" alt="Logo" className="w-40" />
           </div>
-          
+
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold opacity-70">
-            {isAdmin ? "Administração" : "Área do Proprietário"}
+            {isAdmin ? "Administracao" : "Area do Condomino"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -73,8 +61,8 @@ export function AppSidebar() {
                 const isActive = location === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={isActive}
                       tooltip={item.title}
                       className={isActive ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground font-medium" : "hover:bg-primary/5"}
@@ -104,7 +92,7 @@ export function AppSidebar() {
               </Avatar>
               <div className="flex flex-col items-start flex-1 min-w-0">
                 <span className="text-sm font-bold truncate w-full">{user?.name}</span>
-                <span className="text-xs text-muted-foreground truncate w-full">{user?.unit ? `Fração ${user.unit}` : "Administrador"}</span>
+                <span className="text-xs text-muted-foreground truncate w-full">{user?.unit ? `Fracao ${user.unit}` : "Administrador"}</span>
               </div>
               <Settings className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </button>
