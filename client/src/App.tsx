@@ -23,6 +23,7 @@ import { UserPagamentos } from "./pages/user/UserPagamentos";
 import { UserPerfil } from "./pages/user/UserPerfil";
 import { UserCameras } from "./pages/user/UserCameras";
 import { Avisos } from "./pages/shared/Avisos";
+import { Chat } from "./pages/shared/Chat";
 import { UserCobrancas } from "./pages/user/UserCobrancas";
 
 const AdminRoute = ({ component: Component }: { component: React.ComponentType }) => (
