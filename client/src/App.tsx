@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+﻿import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,12 +11,12 @@ import NotFound from "./pages/not-found";
 
 // Admin pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
-import { Proprietários } from "./pages/admin/Proprietários";
+import { ProprietÃ¡rios } from "./pages/admin/ProprietÃ¡rios";
 import { Financeiro } from "./pages/admin/Financeiro";
 import { Obras } from "./pages/shared/Obras";
 import { Reservas } from "./pages/shared/Reservas";
 import { Seguranca } from "./pages/shared/Seguranca";
-import { Proprietários as GestaoUtilizadores } from "./pages/admin/Proprietários"; // Reuse for now
+import { ProprietÃ¡rios as GestaoUtilizadores } from "./pages/admin/ProprietÃ¡rios"; // Reuse for now
 
 // User pages
 import { UserHome } from "./pages/user/UserHome";
@@ -45,7 +45,7 @@ function Router() {
 
       {/* ADMIN ROUTES */}
       <Route path="/admin"><AdminRoute component={AdminDashboard} /></Route>
-      <Route path="/admin/Proprietários"><AdminRoute component={Proprietários} /></Route>
+      <Route path="/admin/ProprietÃ¡rios"><AdminRoute component={ProprietÃ¡rios} /></Route>
       <Route path="/admin/financeiro"><AdminRoute component={Financeiro} /></Route>
       <Route path="/admin/obras"><AdminRoute component={Obras} /></Route>
       <Route path="/admin/reservas"><AdminRoute component={Reservas} /></Route>
