@@ -1,4 +1,4 @@
-import { useUsers, useCreateUser, useDeleteUser, useUpdateUser, usePayments, useReservations, usePaymentSchedules } from "@/hooks/use-condominium";
+﻿import { useUsers, useCreateUser, useDeleteUser, useUpdateUser, usePayments, useReservations, usePaymentSchedules } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export function Proprietários() {
+export function Condominos() {
   const { data: users, isLoading } = useUsers();
   const { data: payments } = usePayments();
   const { data: reservations } = useReservations();
@@ -31,23 +31,23 @@ export function Proprietários() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<User | null>(null);
 
-  const residents = users?.filter(u => u.username !== "admin" && u.userType !== "Arrendatário") || [];
-  const Arrendatários = users?.filter(u => u.userType === "Arrendatário") || [];
+  const residents = users?.filter(u => u.username !== "admin" && u.userType !== "ArrendatÃ¡rio") || [];
+  const ArrendatÃ¡rios = users?.filter(u => u.userType === "ArrendatÃ¡rio") || [];
 
-  const form = useForm<InsertUser & { userType?: string; relatedProprietárioId?: number }>({
+  const form = useForm<InsertUser & { userType?: string; relatedProprietÃ¡rioId?: number }>({
     resolver: zodResolver(insertUserSchema),
-    defaultValues: { name: "", username: "", password: "", unit: "", role: "user", userType: "Proprietário", relatedProprietárioId: undefined },
+    defaultValues: { name: "", username: "", password: "", unit: "", role: "user", userType: "ProprietÃ¡rio", relatedProprietÃ¡rioId: undefined },
   });
 
   const onSubmit = (data: any) => {
-    if (data.userType === "Arrendatário" && !data.relatedProprietárioId) {
-      toast({ title: "Erro", description: "Selecione o Proprietário associado ao arrendatário.", variant: "destructive" });
+    if (data.userType === "ArrendatÃ¡rio" && !data.relatedProprietÃ¡rioId) {
+      toast({ title: "Erro", description: "Selecione o ProprietÃ¡rio associado ao arrendatÃ¡rio.", variant: "destructive" });
       return;
     }
     if (data.userType === "administrador") data.role = "admin";
     else data.role = "user";
     if (!data.username || !data.password || !data.name || !data.unit) {
-      toast({ title: "Erro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
+      toast({ title: "Erro", description: "Todos os campos sÃ£o obrigatÃ³rios.", variant: "destructive" });
       return;
     }
     if (editingUser) {
@@ -94,7 +94,7 @@ export function Proprietários() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="unit" render={({ field }) => (
-              <FormItem><FormLabel>Fração</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>FraÃ§Ã£o</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome" {...field} /></FormControl><FormMessage /></FormItem>
@@ -111,22 +111,22 @@ export function Proprietários() {
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="administrador">Administrador de Condomínio</SelectItem>
-                    <SelectItem value="Proprietário">Proprietário</SelectItem>
-                    <SelectItem value="Arrendatário">Arrendatário</SelectItem>
+                    <SelectItem value="administrador">Administrador de CondomÃ­nio</SelectItem>
+                    <SelectItem value="ProprietÃ¡rio">ProprietÃ¡rio</SelectItem>
+                    <SelectItem value="ArrendatÃ¡rio">ArrendatÃ¡rio</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )} />
-            {form.watch("userType") === "Arrendatário" && (
-              <FormField control={form.control} name="relatedProprietárioId" render={({ field }) => (
+            {form.watch("userType") === "ArrendatÃ¡rio" && (
+              <FormField control={form.control} name="relatedProprietÃ¡rioId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Proprietário Associado</FormLabel>
+                  <FormLabel>ProprietÃ¡rio Associado</FormLabel>
                   <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o Proprietário" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o ProprietÃ¡rio" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {residents.filter(u => u.userType === "Proprietário").map(u => (
+                      {residents.filter(u => u.userType === "ProprietÃ¡rio").map(u => (
                         <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -148,37 +148,37 @@ export function Proprietários() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold">Proprietários</h1>
-          <p className="text-muted-foreground mt-1">Gestão de residentes e arrendatários.</p>
+          <h1 className="text-3xl font-display font-bold">ProprietÃ¡rios</h1>
+          <p className="text-muted-foreground mt-1">GestÃ£o de residentes e arrendatÃ¡rios.</p>
         </div>
         <DialogForm />
       </div>
 
-      <Tabs defaultValue="Proprietários">
+      <Tabs defaultValue="ProprietÃ¡rios">
         <TabsList className="mb-6">
-          <TabsTrigger value="Proprietários"><Home className="w-4 h-4 mr-2" />Proprietários ({residents.length})</TabsTrigger>
-          <TabsTrigger value="Arrendatários"><Users className="w-4 h-4 mr-2" />Arrendatários ({Arrendatários.length})</TabsTrigger>
+          <TabsTrigger value="ProprietÃ¡rios"><Home className="w-4 h-4 mr-2" />ProprietÃ¡rios ({residents.length})</TabsTrigger>
+          <TabsTrigger value="ArrendatÃ¡rios"><Users className="w-4 h-4 mr-2" />ArrendatÃ¡rios ({ArrendatÃ¡rios.length})</TabsTrigger>
         </TabsList>
 
-        {/* ABA ProprietárioS */}
-        <TabsContent value="Proprietários">
+        {/* ABA ProprietÃ¡rioS */}
+        <TabsContent value="ProprietÃ¡rios">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <Card className="overflow-hidden border-border/50 shadow-sm">
               <Table>
                 <TableHeader className="bg-secondary/50">
                   <TableRow className="border-border/50">
-                    <TableHead>Fração</TableHead>
+                    <TableHead>FraÃ§Ã£o</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Utilizador</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">AÃ§Ãµes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">A carregar...</TableCell></TableRow>
                   ) : residents.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum Proprietário encontrado.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum ProprietÃ¡rio encontrado.</TableCell></TableRow>
                   ) : residents.map((user) => (
                     <TableRow key={user.id} className="group border-border/50 hover:bg-secondary/20">
                       <TableCell className="font-bold text-primary">{user.unit}</TableCell>
@@ -204,19 +204,19 @@ export function Proprietários() {
           </motion.div>
         </TabsContent>
 
-        {/* ABA ARRENDAT�RIOS */}
-        <TabsContent value="Arrendatários">
+        {/* ABA ARRENDATï¿½RIOS */}
+        <TabsContent value="ArrendatÃ¡rios">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Lista */}
             <div className="space-y-3">
-              {Arrendatários.length === 0 ? (
+              {ArrendatÃ¡rios.length === 0 ? (
                 <Card className="p-8 text-center border-dashed">
                   <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">Sem arrendatários</p>
+                  <p className="text-muted-foreground font-medium">Sem arrendatÃ¡rios</p>
                 </Card>
-              ) : Arrendatários.map((tenant, i) => {
+              ) : ArrendatÃ¡rios.map((tenant, i) => {
                 const { overdue, pending } = getTenantStats(tenant.id);
-                const ProprietárioAssoc = users?.find(u => u.id === Number(tenant.relatedProprietárioId));
+                const ProprietÃ¡rioAssoc = users?.find(u => u.id === Number(tenant.relatedProprietÃ¡rioId));
                 return (
                   <motion.div key={tenant.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
                     <Card
@@ -230,8 +230,8 @@ export function Proprietários() {
                           </div>
                           <div>
                             <p className="font-bold text-sm">{tenant.name}</p>
-                            <p className="text-xs text-muted-foreground">Fração {tenant.unit}</p>
-                            {ProprietárioAssoc && <p className="text-xs text-primary">? {ProprietárioAssoc.name}</p>}
+                            <p className="text-xs text-muted-foreground">FraÃ§Ã£o {tenant.unit}</p>
+                            {ProprietÃ¡rioAssoc && <p className="text-xs text-primary">? {ProprietÃ¡rioAssoc.name}</p>}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
@@ -251,11 +251,11 @@ export function Proprietários() {
               {!selectedTenant ? (
                 <Card className="p-12 text-center border-dashed h-full flex flex-col items-center justify-center">
                   <Users className="w-16 h-16 text-muted-foreground/20 mb-4" />
-                  <p className="text-muted-foreground font-medium">Selecione um arrendat�rio para ver os detalhes</p>
+                  <p className="text-muted-foreground font-medium">Selecione um arrendatï¿½rio para ver os detalhes</p>
                 </Card>
               ) : (() => {
                 const { pending, overdue, paid, nextPayment, nextReservation, tenantSchedules } = getTenantStats(selectedTenant.id);
-                const ProprietárioAssoc = users?.find(u => u.id === Number(selectedTenant.relatedProprietárioId));
+                const ProprietÃ¡rioAssoc = users?.find(u => u.id === Number(selectedTenant.relatedProprietÃ¡rioId));
                 return (
                   <motion.div key={selectedTenant.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {/* Header */}
@@ -267,8 +267,8 @@ export function Proprietários() {
                           </div>
                           <div>
                             <h2 className="font-display font-bold text-xl">{selectedTenant.name}</h2>
-                            <p className="text-muted-foreground text-sm">Fração {selectedTenant.unit} - {selectedTenant.username}</p>
-                            {ProprietárioAssoc && <p className="text-xs text-primary mt-1">Proprietário: {ProprietárioAssoc.name} (Fração {ProprietárioAssoc.unit})</p>}
+                            <p className="text-muted-foreground text-sm">FraÃ§Ã£o {selectedTenant.unit} - {selectedTenant.username}</p>
+                            {ProprietÃ¡rioAssoc && <p className="text-xs text-primary mt-1">ProprietÃ¡rio: {ProprietÃ¡rioAssoc.name} (FraÃ§Ã£o {ProprietÃ¡rioAssoc.unit})</p>}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -294,24 +294,24 @@ export function Proprietários() {
                       </Card>
                     </div>
 
-                    {/* Próximo pagamento */}
+                    {/* PrÃ³ximo pagamento */}
                     {nextPayment && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Próximo Pagamento</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">PrÃ³ximo Pagamento</p>
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-bold">{nextPayment.description}</p>
                             <p className="text-sm text-muted-foreground">Vence a {format(new Date(nextPayment.dueDate), "dd 'de' MMMM", { locale: ptBR })}</p>
                           </div>
-                          <p className="font-bold text-lg text-primary">€{Number(nextPayment.amount).toFixed(2)}</p>
+                          <p className="font-bold text-lg text-primary">â‚¬{Number(nextPayment.amount).toFixed(2)}</p>
                         </div>
                       </Card>
                     )}
 
-                    {/* Próxima reserva */}
+                    {/* PrÃ³xima reserva */}
                     {nextReservation && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Próxima Reserva</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">PrÃ³xima Reserva</p>
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-primary" />
                           <div>
@@ -325,7 +325,7 @@ export function Proprietários() {
                     {/* Agendamentos */}
                     {tenantSchedules.length > 0 && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cobranças Periódicas</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">CobranÃ§as PeriÃ³dicas</p>
                         <div className="space-y-2">
                           {tenantSchedules.map(s => (
                             <div key={s.id} className="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-2 text-sm">
@@ -333,7 +333,7 @@ export function Proprietários() {
                                 <RepeatIcon className="w-3 h-3" />
                                 <span>{s.description}</span>
                               </div>
-                              <span className="font-bold text-blue-700">€{s.amount}/mês no dia {s.dayOfMonth}</span>
+                              <span className="font-bold text-blue-700">â‚¬{s.amount}/mÃªs no dia {s.dayOfMonth}</span>
                             </div>
                           ))}
                         </div>
@@ -349,7 +349,7 @@ export function Proprietários() {
                             <div key={p.id} className="flex items-center justify-between text-sm">
                               <span className="font-medium">{p.description}</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-rose-600 font-bold">€{Number(p.amount).toFixed(2)}</span>
+                                <span className="text-rose-600 font-bold">â‚¬{Number(p.amount).toFixed(2)}</span>
                                 <span className="text-xs text-muted-foreground">venceu {format(new Date(p.dueDate), "dd MMM", { locale: ptBR })}</span>
                               </div>
                             </div>
