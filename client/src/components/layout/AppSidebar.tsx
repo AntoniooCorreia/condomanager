@@ -29,6 +29,7 @@ export function AppSidebar() {
     { title: "Reservas", url: "/admin/reservas", icon: Calendar },
     { title: "Seguranca", url: "/admin/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/admin/camaras", icon: Camera },
+    { title: "Quadro de Avisos", url: "/admin/avisos", icon: Megaphone },
   ];
 
   const baseUserLinks = [
