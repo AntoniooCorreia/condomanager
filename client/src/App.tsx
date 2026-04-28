@@ -1,4 +1,4 @@
-﻿import { Switch, Route } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,12 +11,11 @@ import NotFound from "./pages/not-found";
 
 // Admin pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
-import { ProprietÃ¡rios } from "./pages/admin/ProprietÃ¡rios";
+import { Condominos } from "./pages/admin/Condominos";
 import { Financeiro } from "./pages/admin/Financeiro";
 import { Obras } from "./pages/shared/Obras";
 import { Reservas } from "./pages/shared/Reservas";
 import { Seguranca } from "./pages/shared/Seguranca";
-import { ProprietÃ¡rios as GestaoUtilizadores } from "./pages/admin/ProprietÃ¡rios"; // Reuse for now
 
 // User pages
 import { UserHome } from "./pages/user/UserHome";
@@ -25,7 +24,6 @@ import { UserPerfil } from "./pages/user/UserPerfil";
 import { UserCameras } from "./pages/user/UserCameras";
 import { UserCobrancas } from "./pages/user/UserCobrancas";
 
-// Helpers for layout wrapping
 const AdminRoute = ({ component: Component }: { component: React.ComponentType }) => (
   <MainLayout requireAdmin={true}>
     <Component />
@@ -43,16 +41,15 @@ function Router() {
     <Switch>
       <Route path="/" component={Login} />
 
-      {/* ADMIN ROUTES */}
       <Route path="/admin"><AdminRoute component={AdminDashboard} /></Route>
-      <Route path="/admin/ProprietÃ¡rios"><AdminRoute component={ProprietÃ¡rios} /></Route>
+      <Route path="/admin/condominos"><AdminRoute component={Condominos} /></Route>
       <Route path="/admin/financeiro"><AdminRoute component={Financeiro} /></Route>
       <Route path="/admin/obras"><AdminRoute component={Obras} /></Route>
       <Route path="/admin/reservas"><AdminRoute component={Reservas} /></Route>
-      <Route path="/admin/utilizadores"><AdminRoute component={GestaoUtilizadores} /></Route>
+      <Route path="/admin/utilizadores"><AdminRoute component={Condominos} /></Route>
       <Route path="/admin/seguranca"><AdminRoute component={Seguranca} /></Route>
+      <Route path="/admin/camaras"><AdminRoute component={UserCameras} /></Route>
 
-      {/* USER ROUTES */}
       <Route path="/user"><UserRoute component={UserHome} /></Route>
       <Route path="/user/pagamentos"><UserRoute component={UserPagamentos} /></Route>
       <Route path="/user/reservar"><UserRoute component={Reservas} /></Route>
@@ -60,7 +57,6 @@ function Router() {
       <Route path="/user/seguranca"><UserRoute component={Seguranca} /></Route>
       <Route path="/user/perfil"><UserRoute component={UserPerfil} /></Route>
       <Route path="/user/camaras"><UserRoute component={UserCameras} /></Route>
-      <Route path="/admin/camaras"><AdminRoute component={UserCameras} /></Route>
       <Route path="/user/cobrancas"><UserRoute component={UserCobrancas} /></Route>
 
       <Route component={NotFound} />
