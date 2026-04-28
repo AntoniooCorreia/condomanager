@@ -23,7 +23,7 @@ import { UserPagamentos } from "./pages/user/UserPagamentos";
 import { UserPerfil } from "./pages/user/UserPerfil";
 import { UserCameras } from "./pages/user/UserCameras";
 import { Avisos } from "./pages/shared/Avisos";
-import { Chat } from "./pages/shared/Chat";
+
 import { UserCobrancas } from "./pages/user/UserCobrancas";
 
 const AdminRoute = ({ component: Component }: { component: React.ComponentType }) => (
@@ -61,9 +61,9 @@ function Router() {
       <Route path="/user/camaras"><UserRoute component={UserCameras} /></Route>
       <Route path="/user/cobrancas"><UserRoute component={UserCobrancas} /></Route>
       <Route path="/user/avisos"><UserRoute component={Avisos} /></Route>
-      <Route path="/user/chat"><UserRoute component={Chat} /></Route>
+      
       <Route path="/admin/avisos"><AdminRoute component={Avisos} /></Route>
-      <Route path="/admin/chat"><AdminRoute component={Chat} /></Route>
+      
 
       <Route component={NotFound} />
     </Switch>
