@@ -59,6 +59,10 @@ function Router() {
       <Route path="/user/perfil"><UserRoute component={UserPerfil} /></Route>
       <Route path="/user/camaras"><UserRoute component={UserCameras} /></Route>
       <Route path="/user/cobrancas"><UserRoute component={UserCobrancas} /></Route>
+      <Route path="/user/avisos"><UserRoute component={Avisos} /></Route>
+      <Route path="/user/chat"><UserRoute component={Chat} /></Route>
+      <Route path="/admin/avisos"><AdminRoute component={Avisos} /></Route>
+      <Route path="/admin/chat"><AdminRoute component={Chat} /></Route>
 
       <Route component={NotFound} />
     </Switch>
