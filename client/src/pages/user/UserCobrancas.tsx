@@ -47,8 +47,8 @@ export function UserCobrancas() {
   const [selectedTenant, setSelectedTenant] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  console.log("users", users, "userId", user?.id); const myTenants = users?.filter(u => Number(u.relatedCondominoId) === user?.id) || [];
-  const mySchedules = schedules?.filter(s => s.condominoId === user?.id) || [];
+  console.log("users", users, "userId", user?.id); const myTenants = users?.filter(u => Number(u.relatedProprietárioId) === user?.id) || [];
+  const mySchedules = schedules?.filter(s => s.ProprietárioId === user?.id) || [];
 
   const tenantPayments = (tenantId: number) =>
     (payments || []).filter(p => p.userId === tenantId);
@@ -57,7 +57,7 @@ export function UserCobrancas() {
     setSelectedTenant(tenantId);
     setDialog(type);
     singleForm.reset({ userId: tenantId, description: "", amount: "0", status: "pending", dueDate: new Date() });
-    recurringForm.reset({ condominoId: user?.id || 0, tenantId, dayOfMonth: 5, amount: "0", description: "", active: true });
+    recurringForm.reset({ ProprietárioId: user?.id || 0, tenantId, dayOfMonth: 5, amount: "0", description: "", active: true });
   };
 
   const singleForm = useForm<InsertPayment>({
@@ -67,7 +67,7 @@ export function UserCobrancas() {
 
   const recurringForm = useForm<InsertPaymentSchedule>({
     resolver: zodResolver(insertPaymentScheduleSchema),
-    defaultValues: { condominoId: user?.id || 0, tenantId: 0, dayOfMonth: 5, amount: "0", description: "", active: true },
+    defaultValues: { ProprietárioId: user?.id || 0, tenantId: 0, dayOfMonth: 5, amount: "0", description: "", active: true },
   });
 
   const onSubmitSingle = (data: InsertPayment) => {
@@ -80,7 +80,7 @@ export function UserCobrancas() {
   };
 
   const onSubmitRecurring = (data: InsertPaymentSchedule) => {
-    createSchedule.mutate({ ...data, condominoId: user?.id || 0 }, {
+    createSchedule.mutate({ ...data, ProprietárioId: user?.id || 0 }, {
       onSuccess: () => {
         toast({ title: "Agendamento criado", description: "Cobrança periódica configurada com sucesso." });
         setDialog(null);
@@ -137,14 +137,14 @@ export function UserCobrancas() {
         </div>
       </div>
 
-      <Tabs defaultValue="arrendatarios">
+      <Tabs defaultValue="Arrendatários">
         <TabsList className="mb-6">
-          <TabsTrigger value="arrendatarios"><Users className="w-4 h-4 mr-2" />Arrendatários</TabsTrigger>
+          <TabsTrigger value="Arrendatários"><Users className="w-4 h-4 mr-2" />Arrendatários</TabsTrigger>
           <TabsTrigger value="agendamentos"><RepeatIcon className="w-4 h-4 mr-2" />Agendamentos Periódicos</TabsTrigger>
         </TabsList>
 
         {/* --- ABA ARRENDATÁRIOS --- */}
-        <TabsContent value="arrendatarios" className="space-y-4">
+        <TabsContent value="Arrendatários" className="space-y-4">
           {myTenants.map((tenant, idx) => {
             const tp = tenantPayments(tenant.id);
             const pending = tp.filter(p => p.status === "pending");

@@ -33,7 +33,7 @@ export function AdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Total Condóminos" 
+          title="Total Proprietários" 
           value={users?.filter(u => u.role === 'user').length || 0} 
           icon={<Users className="w-6 h-6" />} 
           delay={0}

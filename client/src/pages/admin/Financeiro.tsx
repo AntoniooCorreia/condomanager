@@ -118,11 +118,11 @@ export function Financeiro() {
                     name="userId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Condómino</FormLabel>
+                        <FormLabel>Proprietário</FormLabel>
                         <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione o condómino" />
+                              <SelectValue placeholder="Selecione o Proprietário" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>

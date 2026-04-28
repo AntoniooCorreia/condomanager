@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export function Condominos() {
+export function Proprietários() {
   const { data: users, isLoading } = useUsers();
   const { data: payments } = usePayments();
   const { data: reservations } = useReservations();
@@ -31,20 +31,20 @@ export function Condominos() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<User | null>(null);
 
-  const residents = users?.filter(u => u.username !== "admin" && u.userType !== "arrendatario") || [];
-  const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
+  const residents = users?.filter(u => u.username !== "admin" && u.userType !== "Arrendatário") || [];
+  const Arrendatários = users?.filter(u => u.userType === "Arrendatário") || [];
 
-  const form = useForm<InsertUser & { userType?: string; relatedCondominoId?: number }>({
+  const form = useForm<InsertUser & { userType?: string; relatedProprietárioId?: number }>({
     resolver: zodResolver(insertUserSchema),
-    defaultValues: { name: "", username: "", password: "", unit: "", role: "user", userType: "condomino", relatedCondominoId: undefined },
+    defaultValues: { name: "", username: "", password: "", unit: "", role: "user", userType: "Proprietário", relatedProprietárioId: undefined },
   });
 
   const onSubmit = (data: any) => {
-    if (data.userType === "arrendatario" && !data.relatedCondominoId) {
-      toast({ title: "Erro", description: "Selecione o condómino associado ao arrendatário.", variant: "destructive" });
+    if (data.userType === "Arrendatário" && !data.relatedProprietárioId) {
+      toast({ title: "Erro", description: "Selecione o Proprietário associado ao arrendatário.", variant: "destructive" });
       return;
     }
-    if (data.userType === "gestor") data.role = "admin";
+    if (data.userType === "administrador") data.role = "admin";
     else data.role = "user";
     if (!data.username || !data.password || !data.name || !data.unit) {
       toast({ title: "Erro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
@@ -111,22 +111,22 @@ export function Condominos() {
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="gestor">Gestor de Condomínio</SelectItem>
-                    <SelectItem value="condomino">Condómino</SelectItem>
-                    <SelectItem value="arrendatario">Arrendatário</SelectItem>
+                    <SelectItem value="administrador">Administrador de Condomínio</SelectItem>
+                    <SelectItem value="Proprietário">Proprietário</SelectItem>
+                    <SelectItem value="Arrendatário">Arrendatário</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )} />
-            {form.watch("userType") === "arrendatario" && (
-              <FormField control={form.control} name="relatedCondominoId" render={({ field }) => (
+            {form.watch("userType") === "Arrendatário" && (
+              <FormField control={form.control} name="relatedProprietárioId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Condómino Associado</FormLabel>
+                  <FormLabel>Proprietário Associado</FormLabel>
                   <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cond�mino" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o Proprietário" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {residents.filter(u => u.userType === "condomino").map(u => (
+                      {residents.filter(u => u.userType === "Proprietário").map(u => (
                         <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -148,20 +148,20 @@ export function Condominos() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold">Condóminos</h1>
+          <h1 className="text-3xl font-display font-bold">Proprietários</h1>
           <p className="text-muted-foreground mt-1">Gestão de residentes e arrendatários.</p>
         </div>
         <DialogForm />
       </div>
 
-      <Tabs defaultValue="condominos">
+      <Tabs defaultValue="Proprietários">
         <TabsList className="mb-6">
-          <TabsTrigger value="condominos"><Home className="w-4 h-4 mr-2" />Condóminos ({residents.length})</TabsTrigger>
-          <TabsTrigger value="arrendatarios"><Users className="w-4 h-4 mr-2" />Arrendatários ({arrendatarios.length})</TabsTrigger>
+          <TabsTrigger value="Proprietários"><Home className="w-4 h-4 mr-2" />Proprietários ({residents.length})</TabsTrigger>
+          <TabsTrigger value="Arrendatários"><Users className="w-4 h-4 mr-2" />Arrendatários ({Arrendatários.length})</TabsTrigger>
         </TabsList>
 
-        {/* ABA COND�MINOS */}
-        <TabsContent value="condominos">
+        {/* ABA ProprietárioS */}
+        <TabsContent value="Proprietários">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <Card className="overflow-hidden border-border/50 shadow-sm">
               <Table>
@@ -178,7 +178,7 @@ export function Condominos() {
                   {isLoading ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">A carregar...</TableCell></TableRow>
                   ) : residents.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum condómino encontrado.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum Proprietário encontrado.</TableCell></TableRow>
                   ) : residents.map((user) => (
                     <TableRow key={user.id} className="group border-border/50 hover:bg-secondary/20">
                       <TableCell className="font-bold text-primary">{user.unit}</TableCell>
@@ -187,7 +187,7 @@ export function Condominos() {
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 w-fit">Ativo</Badge>
-                          {user.userType === "gestor" && <Badge className="bg-purple-50 text-purple-600 border-purple-200 w-fit">Gestor</Badge>}
+                          {user.userType === "administrador" && <Badge className="bg-purple-50 text-purple-600 border-purple-200 w-fit">administrador</Badge>}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -205,18 +205,18 @@ export function Condominos() {
         </TabsContent>
 
         {/* ABA ARRENDAT�RIOS */}
-        <TabsContent value="arrendatarios">
+        <TabsContent value="Arrendatários">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Lista */}
             <div className="space-y-3">
-              {arrendatarios.length === 0 ? (
+              {Arrendatários.length === 0 ? (
                 <Card className="p-8 text-center border-dashed">
                   <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-muted-foreground font-medium">Sem arrendatários</p>
                 </Card>
-              ) : arrendatarios.map((tenant, i) => {
+              ) : Arrendatários.map((tenant, i) => {
                 const { overdue, pending } = getTenantStats(tenant.id);
-                const condominoAssoc = users?.find(u => u.id === Number(tenant.relatedCondominoId));
+                const ProprietárioAssoc = users?.find(u => u.id === Number(tenant.relatedProprietárioId));
                 return (
                   <motion.div key={tenant.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
                     <Card
@@ -231,7 +231,7 @@ export function Condominos() {
                           <div>
                             <p className="font-bold text-sm">{tenant.name}</p>
                             <p className="text-xs text-muted-foreground">Fração {tenant.unit}</p>
-                            {condominoAssoc && <p className="text-xs text-primary">? {condominoAssoc.name}</p>}
+                            {ProprietárioAssoc && <p className="text-xs text-primary">? {ProprietárioAssoc.name}</p>}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
@@ -255,7 +255,7 @@ export function Condominos() {
                 </Card>
               ) : (() => {
                 const { pending, overdue, paid, nextPayment, nextReservation, tenantSchedules } = getTenantStats(selectedTenant.id);
-                const condominoAssoc = users?.find(u => u.id === Number(selectedTenant.relatedCondominoId));
+                const ProprietárioAssoc = users?.find(u => u.id === Number(selectedTenant.relatedProprietárioId));
                 return (
                   <motion.div key={selectedTenant.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {/* Header */}
@@ -268,7 +268,7 @@ export function Condominos() {
                           <div>
                             <h2 className="font-display font-bold text-xl">{selectedTenant.name}</h2>
                             <p className="text-muted-foreground text-sm">Fração {selectedTenant.unit} - {selectedTenant.username}</p>
-                            {condominoAssoc && <p className="text-xs text-primary mt-1">Condómino: {condominoAssoc.name} (Fração {condominoAssoc.unit})</p>}
+                            {ProprietárioAssoc && <p className="text-xs text-primary mt-1">Proprietário: {ProprietárioAssoc.name} (Fração {ProprietárioAssoc.unit})</p>}
                           </div>
                         </div>
                         <div className="flex gap-2">

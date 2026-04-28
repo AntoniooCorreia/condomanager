@@ -19,7 +19,7 @@ export default function Login() {
 
   // Redirect if already logged in
   if (user) {
-    setLocation(user.role === "admin" || user.role === "gestor" ? "/admin" : "/user");
+    setLocation(user.role === "admin" || user.role === "administrador" ? "/admin" : "/user");
     return null;
   }
 
@@ -61,7 +61,7 @@ export default function Login() {
               Gestão inteligente para o seu condomínio.
             </h1>
             <p className="text-primary-foreground/80 text-lg text-balance">
-              Transparência, eficiência e comunicação direta entre a administração e os condóminos.
+              Transparência, eficiência e comunicação direta entre a administração e os Proprietários.
             </p>
           </motion.div>
         </div>

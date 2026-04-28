@@ -23,8 +23,8 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   unit: text("unit"),
   avatar: text("avatar"),
-  userType: text("user_type").notNull().default("condomino"),
-  relatedCondominoId: integer("related_condomino_id")
+  userType: text("user_type").notNull().default("Proprietário"),
+  relatedProprietárioId: integer("related_Proprietário_id")
     // 👇 AQUI ESTÁ A CORREÇÃO
     .references((): any => users.id),
 });
@@ -76,7 +76,7 @@ export const reservations = pgTable("reservations", {
 
 export const paymentSchedules = pgTable("payment_schedules", {
   id: serial("id").primaryKey(),
-  condominoId: integer("condomino_id").references(() => users.id).notNull(),
+  ProprietárioId: integer("Proprietário_id").references(() => users.id).notNull(),
   tenantId: integer("tenant_id").references(() => users.id).notNull(),
   dayOfMonth: integer("day_of_month").notNull(), // 1–28
   amount: numeric("amount").notNull(),

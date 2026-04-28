@@ -30,11 +30,11 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const isAdmin = user?.role === "admin";
-  const isCondomino = user?.userType === "condomino" || user?.userType === "gestor";
+  const isProprietário = user?.userType === "Proprietário" || user?.userType === "administrador";
 
   const adminLinks = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-    { title: "Condóminos", url: "/admin/condominos", icon: Users },
+    { title: "Proprietários", url: "/admin/Proprietários", icon: Users },
     { title: "Financeiro", url: "/admin/financeiro", icon: CreditCard },
     { title: "Obras", url: "/admin/obras", icon: HardHat },
     { title: "Reservas", url: "/admin/reservas", icon: Calendar },
@@ -46,7 +46,7 @@ export function AppSidebar() {
   const baseUserLinks = [
     { title: "Dashboard", url: "/user", icon: LayoutDashboard },
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
-    ...(isCondomino ? [{ title: "Cobranças", url: "/user/cobrancas", icon: Receipt }] : []),
+    ...(isProprietário ? [{ title: "Cobranças", url: "/user/cobrancas", icon: Receipt }] : []),
     { title: "Reservar Áreas", url: "/user/reservar", icon: Calendar },
     { title: "Obras no Edifício", url: "/user/obras", icon: HardHat },
     { title: "Ocorrências", url: "/user/seguranca", icon: ShieldAlert },
@@ -65,7 +65,7 @@ export function AppSidebar() {
           </div>
           
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold opacity-70">
-            {isAdmin ? "Administração" : "Área do Condómino"}
+            {isAdmin ? "Administração" : "Área do Proprietário"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

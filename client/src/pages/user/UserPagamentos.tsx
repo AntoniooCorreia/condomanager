@@ -32,11 +32,11 @@ export function UserPagamentos() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
 
-  const isCondomino = user?.userType === "condomino" || user?.userType === "gestor";
-  const isArrendatario = user?.userType === "arrendatario";
+  const isProprietário = user?.userType === "Proprietário" || user?.userType === "administrador";
+  const isArrendatário = user?.userType === "Arrendatário";
 
   const myPayments = payments?.filter(p => p.userId === user?.id) || [];
-  const myTenants = users?.filter(u => u.relatedCondominoId === user?.id) || [];
+  const myTenants = users?.filter(u => u.relatedProprietárioId === user?.id) || [];
   const tenantPayments = (tenantId: number) => payments?.filter(p => p.userId === tenantId) || [];
 
   // Dívidas: pagamentos pendentes do arrendatário separados por em atraso / a vencer
@@ -97,9 +97,9 @@ export function UserPagamentos() {
         <p className="text-muted-foreground mt-1">Gestão de quotas e avisos de pagamento.</p>
       </div>
 
-      <Tabs defaultValue={isArrendatario ? "dividas" : "meus"} className="w-full">
+      <Tabs defaultValue={isArrendatário ? "dividas" : "meus"} className="w-full">
         <TabsList className="mb-6">
-          {isArrendatario && (
+          {isArrendatário && (
             <TabsTrigger value="dividas" className="relative">
               <Flame className="w-4 h-4 mr-2" />
               Dívidas
@@ -111,8 +111,8 @@ export function UserPagamentos() {
             </TabsTrigger>
           )}
           <TabsTrigger value="meus">Os Meus Pagamentos</TabsTrigger>
-          {isCondomino && myTenants.length > 0 && (
-            <TabsTrigger value="arrendatarios">
+          {isProprietário && myTenants.length > 0 && (
+            <TabsTrigger value="Arrendatários">
               <Users className="w-4 h-4 mr-2" />
               Arrendatários ({myTenants.length})
             </TabsTrigger>
@@ -120,7 +120,7 @@ export function UserPagamentos() {
         </TabsList>
 
         {/* --- Dívidas (só arrendatários) --- */}
-        {isArrendatario && (
+        {isArrendatário && (
           <TabsContent value="dividas" className="space-y-6">
             {/* Em atraso */}
             {overduePayments.length > 0 && (
@@ -322,9 +322,9 @@ export function UserPagamentos() {
           )}
         </TabsContent>
 
-        {/* --- Arrendatários (condóminos) --- */}
-        {isCondomino && myTenants.length > 0 && (
-          <TabsContent value="arrendatarios" className="space-y-6">
+        {/* --- Arrendatários (Proprietários) --- */}
+        {isProprietário && myTenants.length > 0 && (
+          <TabsContent value="Arrendatários" className="space-y-6">
             <div className="flex justify-between items-center">
               <p className="text-muted-foreground text-sm">Acompanhe e crie avisos para os seus arrendatários.</p>
               <Dialog open={open} onOpenChange={setOpen}>

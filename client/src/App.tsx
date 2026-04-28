@@ -11,12 +11,12 @@ import NotFound from "./pages/not-found";
 
 // Admin pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
-import { Condominos } from "./pages/admin/Condominos";
+import { Proprietários } from "./pages/admin/Proprietários";
 import { Financeiro } from "./pages/admin/Financeiro";
 import { Obras } from "./pages/shared/Obras";
 import { Reservas } from "./pages/shared/Reservas";
 import { Seguranca } from "./pages/shared/Seguranca";
-import { Condominos as GestaoUtilizadores } from "./pages/admin/Condominos"; // Reuse for now
+import { Proprietários as GestaoUtilizadores } from "./pages/admin/Proprietários"; // Reuse for now
 
 // User pages
 import { UserHome } from "./pages/user/UserHome";
@@ -45,7 +45,7 @@ function Router() {
 
       {/* ADMIN ROUTES */}
       <Route path="/admin"><AdminRoute component={AdminDashboard} /></Route>
-      <Route path="/admin/condominos"><AdminRoute component={Condominos} /></Route>
+      <Route path="/admin/Proprietários"><AdminRoute component={Proprietários} /></Route>
       <Route path="/admin/financeiro"><AdminRoute component={Financeiro} /></Route>
       <Route path="/admin/obras"><AdminRoute component={Obras} /></Route>
       <Route path="/admin/reservas"><AdminRoute component={Reservas} /></Route>

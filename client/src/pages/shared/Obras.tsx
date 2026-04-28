@@ -176,7 +176,7 @@ export function Obras() {
                     name="assignedUserIds"
                     render={() => (
                       <FormItem>
-                        <FormLabel>Condóminos Envolvidos</FormLabel>
+                        <FormLabel>Proprietários Envolvidos</FormLabel>
                         <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border rounded-md">
                           {residents.map((res) => (
                             <FormField
@@ -237,18 +237,18 @@ export function Obras() {
                   <span className="font-bold">€{viewingWork?.cost}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Condóminos Envolvidos:</span>
+                  <span>Proprietários Envolvidos:</span>
                   <span className="font-bold">{viewingWork?.assignedUserIds?.length || 0}</span>
                 </div>
                 <div className="flex justify-between text-sm pt-2 border-t">
-                  <span>Cada Condómino Paga:</span>
+                  <span>Cada Proprietário Paga:</span>
                   <span className="font-bold text-primary">€{calculatePerUser(viewingWork?.cost, viewingWork?.assignedUserIds?.length || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
             {viewingWork?.assignedUserIds && viewingWork.assignedUserIds.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-bold">Condóminos:</h4>
+                <h4 className="text-sm font-bold">Proprietários:</h4>
                 <div className="flex flex-wrap gap-2">
                   {viewingWork.assignedUserIds.map(uid => {
                     const u = users?.find(user => user.id === uid);

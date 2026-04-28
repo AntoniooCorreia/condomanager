@@ -35,8 +35,8 @@ export function UserHome() {
   const [openSingle, setOpenSingle] = useState(false);
   const [openSchedule, setOpenSchedule] = useState(false);
 
-  const isCondomino = user?.userType === "condomino" || user?.userType === "gestor";
-  const myTenants = user?.id ? users?.filter(u => u.relatedCondominoId === user.id) || [] : [];
+  const isProprietário = user?.userType === "Proprietário" || user?.userType === "administrador";
+  const myTenants = user?.id ? users?.filter(u => u.relatedProprietárioId === user.id) || [] : [];
 
   const myPayments = payments?.filter(p => p.userId === user?.id) || [];
   const pendingPayment = myPayments.find(p => p.status !== "paid");
@@ -45,7 +45,7 @@ export function UserHome() {
     ?.filter(r => r.userId === user?.id && new Date(r.date) >= new Date() && r.status === "approved")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
-  const mySchedules = schedules?.filter(s => s.condominoId === user?.id && s.active) || [];
+  const mySchedules = schedules?.filter(s => s.ProprietárioId === user?.id && s.active) || [];
 
   const singleForm = useForm<InsertPayment>({
     resolver: zodResolver(insertPaymentSchema),
@@ -54,7 +54,7 @@ export function UserHome() {
 
   const scheduleForm = useForm<InsertPaymentSchedule>({
     resolver: zodResolver(insertPaymentScheduleSchema),
-    defaultValues: { condominoId: user?.id || 0, tenantId: 0, dayOfMonth: 1, amount: "0", description: "", active: true },
+    defaultValues: { ProprietárioId: user?.id || 0, tenantId: 0, dayOfMonth: 1, amount: "0", description: "", active: true },
   });
 
   const onSubmitSingle = (data: InsertPayment) => {
@@ -68,7 +68,7 @@ export function UserHome() {
   };
 
   const onSubmitSchedule = (data: InsertPaymentSchedule) => {
-    createSchedule.mutate({ ...data, condominoId: user?.id || 0 }, {
+    createSchedule.mutate({ ...data, ProprietárioId: user?.id || 0 }, {
       onSuccess: () => {
         toast({ title: "Agendamento criado", description: "Os pagamentos mensais foram configurados." });
         setOpenSchedule(false);
@@ -91,7 +91,7 @@ export function UserHome() {
           <Badge className="bg-white/20 hover:bg-white/30 text-white border-none mb-4 backdrop-blur-sm">Fração {user?.unit}</Badge>
           <h1 className="text-3xl sm:text-4xl font-display font-bold mb-2">Olá, {user?.name.split(" ")[0]}</h1>
           <p className="text-primary-foreground/80 max-w-lg">
-            Bem-vindo à área do condómino. Aqui pode gerir pagamentos, efetuar reservas e aceder a informações do edifício.
+            Bem-vindo à área do Proprietário. Aqui pode gerir pagamentos, efetuar reservas e aceder a informações do edifício.
           </p>
         </div>
       </motion.div>
@@ -175,8 +175,8 @@ export function UserHome() {
         </motion.div>
       </div>
 
-      {/* --- Gestão de Arrendatários (só condóminos) --- */}
-      {isCondomino && myTenants.length > 0 && (
+      {/* --- Gestão de Arrendatários (só Proprietários) --- */}
+      {isProprietário && myTenants.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="p-6 border-border/50">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

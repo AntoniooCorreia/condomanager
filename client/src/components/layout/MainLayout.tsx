@@ -32,7 +32,7 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
     return <Redirect to="/" />;
   }
 
-  if (requireAdmin && user.role !== "admin" && user.role !== "gestor" && user.userType !== "gestor") {
+  if (requireAdmin && user.role !== "admin" && user.role !== "administrador" && user.userType !== "administrador") {
     return <Redirect to="/user" />;
   }
 

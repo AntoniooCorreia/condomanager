@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json();
     setUser(data);
     sessionStorage.setItem("current_user", JSON.stringify(data));
-    setLocation(data.role === "admin" || data.role === "gestor" || data.userType === "gestor" ? "/admin" : "/user");
+    setLocation(data.role === "admin" || data.role === "administrador" || data.userType === "administrador" ? "/admin" : "/user");
   };
 
   const logout = () => {
