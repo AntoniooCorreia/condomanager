@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      throw new Error("Credenciais inválidas");
+      throw new Error("Credenciais invï¿½lidas");
     }
 
     const data = await res.json();

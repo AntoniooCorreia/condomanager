@@ -41,13 +41,13 @@ export function Condominos() {
 
   const onSubmit = (data: any) => {
     if (data.userType === "arrendatario" && !data.relatedCondominoId) {
-      toast({ title: "Erro", description: "Selecione o condómino associado ao arrendatário.", variant: "destructive" });
+      toast({ title: "Erro", description: "Selecione o condï¿½mino associado ao arrendatï¿½rio.", variant: "destructive" });
       return;
     }
     if (data.userType === "gestor") data.role = "admin";
     else data.role = "user";
     if (!data.username || !data.password || !data.name || !data.unit) {
-      toast({ title: "Erro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
+      toast({ title: "Erro", description: "Todos os campos sï¿½o obrigatï¿½rios.", variant: "destructive" });
       return;
     }
     if (editingUser) {
@@ -94,7 +94,7 @@ export function Condominos() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="unit" render={({ field }) => (
-              <FormItem><FormLabel>Fração</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Fraï¿½ï¿½o</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome" {...field} /></FormControl><FormMessage /></FormItem>
@@ -111,9 +111,9 @@ export function Condominos() {
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="gestor">Gestor de Condomínio</SelectItem>
-                    <SelectItem value="condomino">Condómino</SelectItem>
-                    <SelectItem value="arrendatario">Arrendatário</SelectItem>
+                    <SelectItem value="gestor">Gestor de Condomï¿½nio</SelectItem>
+                    <SelectItem value="condomino">Condï¿½mino</SelectItem>
+                    <SelectItem value="arrendatario">Arrendatï¿½rio</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -122,9 +122,9 @@ export function Condominos() {
             {form.watch("userType") === "arrendatario" && (
               <FormField control={form.control} name="relatedCondominoId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Condómino Associado</FormLabel>
+                  <FormLabel>Condï¿½mino Associado</FormLabel>
                   <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o condómino" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o condï¿½mino" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {residents.filter(u => u.userType === "condomino").map(u => (
                         <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
@@ -148,37 +148,37 @@ export function Condominos() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold">Condóminos</h1>
-          <p className="text-muted-foreground mt-1">Gestão de residentes e arrendatários.</p>
+          <h1 className="text-3xl font-display font-bold">Condï¿½minos</h1>
+          <p className="text-muted-foreground mt-1">Gestï¿½o de residentes e arrendatï¿½rios.</p>
         </div>
         <DialogForm />
       </div>
 
       <Tabs defaultValue="condominos">
         <TabsList className="mb-6">
-          <TabsTrigger value="condominos"><Home className="w-4 h-4 mr-2" />Condóminos ({residents.length})</TabsTrigger>
-          <TabsTrigger value="arrendatarios"><Users className="w-4 h-4 mr-2" />Arrendatários ({arrendatarios.length})</TabsTrigger>
+          <TabsTrigger value="condominos"><Home className="w-4 h-4 mr-2" />Condï¿½minos ({residents.length})</TabsTrigger>
+          <TabsTrigger value="arrendatarios"><Users className="w-4 h-4 mr-2" />Arrendatï¿½rios ({arrendatarios.length})</TabsTrigger>
         </TabsList>
 
-        {/* ABA CONDÓMINOS */}
+        {/* ABA CONDï¿½MINOS */}
         <TabsContent value="condominos">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <Card className="overflow-hidden border-border/50 shadow-sm">
               <Table>
                 <TableHeader className="bg-secondary/50">
                   <TableRow className="border-border/50">
-                    <TableHead>Fração</TableHead>
+                    <TableHead>Fraï¿½ï¿½o</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Utilizador</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">Aï¿½ï¿½es</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">A carregar...</TableCell></TableRow>
                   ) : residents.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum condómino encontrado.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Nenhum condï¿½mino encontrado.</TableCell></TableRow>
                   ) : residents.map((user) => (
                     <TableRow key={user.id} className="group border-border/50 hover:bg-secondary/20">
                       <TableCell className="font-bold text-primary">{user.unit}</TableCell>
@@ -204,7 +204,7 @@ export function Condominos() {
           </motion.div>
         </TabsContent>
 
-        {/* ABA ARRENDATÁRIOS */}
+        {/* ABA ARRENDATï¿½RIOS */}
         <TabsContent value="arrendatarios">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Lista */}
@@ -212,7 +212,7 @@ export function Condominos() {
               {arrendatarios.length === 0 ? (
                 <Card className="p-8 text-center border-dashed">
                   <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">Sem arrendatários</p>
+                  <p className="text-muted-foreground font-medium">Sem arrendatï¿½rios</p>
                 </Card>
               ) : arrendatarios.map((tenant, i) => {
                 const { overdue, pending } = getTenantStats(tenant.id);
@@ -230,7 +230,7 @@ export function Condominos() {
                           </div>
                           <div>
                             <p className="font-bold text-sm">{tenant.name}</p>
-                            <p className="text-xs text-muted-foreground">Fração {tenant.unit}</p>
+                            <p className="text-xs text-muted-foreground">Fraï¿½ï¿½o {tenant.unit}</p>
                             {condominoAssoc && <p className="text-xs text-primary">? {condominoAssoc.name}</p>}
                           </div>
                         </div>
@@ -251,7 +251,7 @@ export function Condominos() {
               {!selectedTenant ? (
                 <Card className="p-12 text-center border-dashed h-full flex flex-col items-center justify-center">
                   <Users className="w-16 h-16 text-muted-foreground/20 mb-4" />
-                  <p className="text-muted-foreground font-medium">Selecione um arrendatário para ver os detalhes</p>
+                  <p className="text-muted-foreground font-medium">Selecione um arrendatï¿½rio para ver os detalhes</p>
                 </Card>
               ) : (() => {
                 const { pending, overdue, paid, nextPayment, nextReservation, tenantSchedules } = getTenantStats(selectedTenant.id);
@@ -267,8 +267,8 @@ export function Condominos() {
                           </div>
                           <div>
                             <h2 className="font-display font-bold text-xl">{selectedTenant.name}</h2>
-                            <p className="text-muted-foreground text-sm">Fração {selectedTenant.unit} · {selectedTenant.username}</p>
-                            {condominoAssoc && <p className="text-xs text-primary mt-1">Condómino: {condominoAssoc.name} (Fração {condominoAssoc.unit})</p>}
+                            <p className="text-muted-foreground text-sm">Fraï¿½ï¿½o {selectedTenant.unit} ï¿½ {selectedTenant.username}</p>
+                            {condominoAssoc && <p className="text-xs text-primary mt-1">Condï¿½mino: {condominoAssoc.name} (Fraï¿½ï¿½o {condominoAssoc.unit})</p>}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -294,24 +294,24 @@ export function Condominos() {
                       </Card>
                     </div>
 
-                    {/* Próximo pagamento */}
+                    {/* Prï¿½ximo pagamento */}
                     {nextPayment && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Próximo Pagamento</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Prï¿½ximo Pagamento</p>
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-bold">{nextPayment.description}</p>
                             <p className="text-sm text-muted-foreground">Vence a {format(new Date(nextPayment.dueDate), "dd 'de' MMMM", { locale: ptBR })}</p>
                           </div>
-                          <p className="font-bold text-lg text-primary">€{Number(nextPayment.amount).toFixed(2)}</p>
+                          <p className="font-bold text-lg text-primary">ï¿½{Number(nextPayment.amount).toFixed(2)}</p>
                         </div>
                       </Card>
                     )}
 
-                    {/* Próxima reserva */}
+                    {/* Prï¿½xima reserva */}
                     {nextReservation && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Próxima Reserva</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Prï¿½xima Reserva</p>
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-primary" />
                           <div>
@@ -325,7 +325,7 @@ export function Condominos() {
                     {/* Agendamentos */}
                     {tenantSchedules.length > 0 && (
                       <Card className="p-4 border-border/50">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cobranças Periódicas</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cobranï¿½as Periï¿½dicas</p>
                         <div className="space-y-2">
                           {tenantSchedules.map(s => (
                             <div key={s.id} className="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-2 text-sm">
@@ -333,7 +333,7 @@ export function Condominos() {
                                 <RepeatIcon className="w-3 h-3" />
                                 <span>{s.description}</span>
                               </div>
-                              <span className="font-bold text-blue-700">€{s.amount}/mês · dia {s.dayOfMonth}</span>
+                              <span className="font-bold text-blue-700">ï¿½{s.amount}/mï¿½s ï¿½ dia {s.dayOfMonth}</span>
                             </div>
                           ))}
                         </div>
@@ -349,7 +349,7 @@ export function Condominos() {
                             <div key={p.id} className="flex items-center justify-between text-sm">
                               <span className="font-medium">{p.description}</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-rose-600 font-bold">€{Number(p.amount).toFixed(2)}</span>
+                                <span className="text-rose-600 font-bold">ï¿½{Number(p.amount).toFixed(2)}</span>
                                 <span className="text-xs text-muted-foreground">venceu {format(new Date(p.dueDate), "dd MMM", { locale: ptBR })}</span>
                               </div>
                             </div>

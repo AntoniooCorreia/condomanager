@@ -32,8 +32,8 @@ import { useState } from "react";
 
 const AREAS = [
   { key: "pool", label: "Piscina", icon: Waves, color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { key: "gym", label: "Ginásio", icon: Dumbbell, color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  { key: "party_room", label: "Salão de Festas", icon: PartyPopper, color: "bg-purple-100 text-purple-700 border-purple-200" },
+  { key: "gym", label: "Ginï¿½sio", icon: Dumbbell, color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  { key: "party_room", label: "Salï¿½o de Festas", icon: PartyPopper, color: "bg-purple-100 text-purple-700 border-purple-200" },
 ];
 
 export function Reservas() {
@@ -86,9 +86,9 @@ export function Reservas() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold">Reservas de Espaços</h1>
+          <h1 className="text-3xl font-display font-bold">Reservas de Espaï¿½os</h1>
           <p className="text-muted-foreground mt-1">
-            {isAdmin ? "Gestão de pedidos de reserva." : "Reserva as áreas comuns do condomínio."}
+            {isAdmin ? "Gestï¿½o de pedidos de reserva." : "Reserva as ï¿½reas comuns do condomï¿½nio."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -108,11 +108,11 @@ export function Reservas() {
                   name="area"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Área Comum</FormLabel>
+                      <FormLabel>ï¿½rea Comum</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a área" />
+                            <SelectValue placeholder="Selecione a ï¿½rea" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -156,7 +156,7 @@ export function Reservas() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendário */}
+        {/* Calendï¿½rio */}
         <Card className="lg:col-span-2 p-6 border-border/50">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display font-bold text-xl capitalize">
@@ -174,7 +174,7 @@ export function Reservas() {
 
           {/* Dias da semana */}
           <div className="grid grid-cols-7 mb-2">
-            {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(d => (
+            {["Seg", "Ter", "Qua", "Qui", "Sex", "Sï¿½b", "Dom"].map(d => (
               <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
             ))}
           </div>
@@ -236,7 +236,7 @@ export function Reservas() {
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">Clique num dia para ver as reservas.</p>
               <div className="mt-4 space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Próximas reservas</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Prï¿½ximas reservas</p>
                 {reservations?.filter(r => new Date(r.date) >= new Date()).slice(0, 5).map(r => {
                   const area = AREAS.find(a => a.key === r.area);
                   const resUser = users?.find(u => u.id === r.userId);
@@ -272,7 +272,7 @@ export function Reservas() {
                         </Badge>
                       </div>
                       <p className="text-xs opacity-80">{format(new Date(r.date), "HH:mm", { locale: ptBR })}h</p>
-                      {isAdmin && <p className="text-xs opacity-70 mt-1">Fração {resUser?.unit} — {resUser?.name}</p>}
+                      {isAdmin && <p className="text-xs opacity-70 mt-1">Fraï¿½ï¿½o {resUser?.unit} ï¿½ {resUser?.name}</p>}
                       {isAdmin && r.status === "pending" && (
                         <div className="flex gap-2 mt-3">
                           <Button size="sm" className="flex-1 h-7 bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={() => handleUpdate(r.id, "approved")} disabled={isPending}>
