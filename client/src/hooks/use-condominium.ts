@@ -219,3 +219,32 @@ export function useUpdateSecurityLog() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] }),
   });
 }
+
+// --- MESSAGES ---
+export function useMessages(userId: number, otherUserId: number) {
+  return useQuery({
+    queryKey: ["/api/messages", userId, otherUserId],
+    queryFn: async () => {
+      if (!userId || !otherUserId) return [];
+      const res = await fetch(`/api/messages?userId=${userId}&otherUserId=${otherUserId}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    refetchInterval: 3000,
+    enabled: !!userId && !!otherUserId,
+  });
+}
+
+export function useSendMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { senderId: number; receiverId: number; content: string }) => {
+      const res = await apiRequest("POST", "/api/messages", data);
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages", variables.senderId, variables.receiverId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/messages", variables.receiverId, variables.senderId] });
+    },
+  });
+}
