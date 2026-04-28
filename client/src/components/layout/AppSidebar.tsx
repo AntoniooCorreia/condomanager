@@ -1,6 +1,6 @@
 import { 
   LayoutDashboard, Users, CreditCard, HardHat, 
-  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt
+  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt, MessageCircle, Megaphone
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,7 +8,6 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -30,6 +29,7 @@ export function AppSidebar() {
     { title: "Seguranca", url: "/admin/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/admin/camaras", icon: Camera },
     { title: "Quadro de Avisos", url: "/admin/avisos", icon: Megaphone },
+    { title: "Mensagens", url: "/admin/chat", icon: MessageCircle },
   ];
 
   const baseUserLinks = [
@@ -40,6 +40,8 @@ export function AppSidebar() {
     { title: "Obras no Edificio", url: "/user/obras", icon: HardHat },
     { title: "Ocorrencias", url: "/user/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/user/camaras", icon: Camera },
+    { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
+    { title: "Mensagens", url: "/user/chat", icon: MessageCircle },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
