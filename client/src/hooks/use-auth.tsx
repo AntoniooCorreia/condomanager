@@ -18,12 +18,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const stored = localStorage.getItem("current_user");
+    const stored = sessionStorage.getItem("current_user");
     if (stored) {
       try {
         setUser(JSON.parse(stored));
       } catch (e) {
-        localStorage.removeItem("current_user");
+        sessionStorage.removeItem("current_user");
       }
     }
     setIsLoading(false);
@@ -42,13 +42,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json();
     setUser(data);
-    localStorage.setItem("current_user", JSON.stringify(data));
+    sessionStorage.setItem("current_user", JSON.stringify(data));
     setLocation(data.role === "admin" || data.role === "gestor" || data.userType === "gestor" ? "/admin" : "/user");
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("current_user");
+    sessionStorage.removeItem("current_user");
     fetch(api.auth.logout.path, { method: "POST" }).catch(() => {});
     setLocation("/");
   };
