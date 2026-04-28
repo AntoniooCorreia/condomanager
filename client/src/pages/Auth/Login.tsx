@@ -121,12 +121,6 @@ export default function Login() {
                 {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
             </form>
-            
-            <div className="mt-8 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground text-center">
-              <p className="font-semibold mb-1 text-foreground">Credenciais de Teste:</p>
-              <p>Admin: admin / password</p>
-              <p>User: joao.silva / password</p>
-            </div>
           </motion.div>
         </Card>
       </div>
