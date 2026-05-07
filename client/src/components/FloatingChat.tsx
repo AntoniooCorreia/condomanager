@@ -36,10 +36,11 @@ export function FloatingChat() {
   const { data: unreadMessages } = useQuery({
     queryKey: ["/api/messages/unread", user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
-      const res = await fetch(`/api/messages?userId=${user.id}&unreadOnly=true`);
+      if (!user?.id || !sistemaUser?.id) return [];
+      const res = await fetch(`/api/messages?userId=${user.id}&otherUserId=${sistemaUser.id}`);
       if (!res.ok) return [];
-      return res.json();
+      const msgs = await res.json();
+      return msgs.filter((m: any) => m.senderId !== user.id && !m.read);
     },
     refetchInterval: 3000,
     enabled: !!user?.id,
