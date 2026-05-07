@@ -106,7 +106,13 @@ export function useCreatePayment() {
       const res = await apiRequest("POST", api.payments.create.path, data);
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [api.payments.list.path] });
+      if (data.userId) {
+        const dueDate = new Date(data.dueDate).toLocaleDateString("pt-PT");
+        sendSystemMessage(data.userId, "Tem um novo aviso de pagamento: " + data.description + " de EUR " + data.amount + " com vencimento a " + dueDate + ".");
+      }
+    },
   });
 }
 
