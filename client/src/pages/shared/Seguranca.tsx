@@ -65,7 +65,7 @@ export function Seguranca() {
       setImagePreview(URL.createObjectURL(file));
       toast({ title: "Imagem carregada com sucesso." });
     } catch (err) {
-      toast({ title: "Erro ao carregar imagem.", variant: "destructive" });
+      console.error("Upload error:", err); toast({ title: "Erro ao carregar imagem.", variant: "destructive" });
     } finally {
       setUploading(false);
     }
