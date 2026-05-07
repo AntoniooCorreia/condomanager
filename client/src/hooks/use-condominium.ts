@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { User, Payment, Work, Reservation, SecurityLog, InsertUser, PaymentSchedule, InsertPaymentSchedule } from "@/shared/schema";
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_WORKS, MOCK_RESERVATIONS, MOCK_SECURITY_LOGS, fetchWithMockFallback } from "@/lib/mock-data";
@@ -51,7 +51,7 @@ export function useDeleteWork() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/works/${id}`);
+      await apiRequest("DELETE", `/api/works?id=${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.works.list.path] }),
   });
