@@ -4,6 +4,18 @@ import { User, Payment, Work, Reservation, SecurityLog, InsertUser, PaymentSched
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_WORKS, MOCK_RESERVATIONS, MOCK_SECURITY_LOGS, fetchWithMockFallback } from "@/lib/mock-data";
 import { apiRequest } from "@/lib/queryClient";
 
+const SISTEMA_ID = 14;
+
+async function sendSystemMessage(receiverId: number, content: string) {
+  try {
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senderId: SISTEMA_ID, receiverId, content })
+    });
+  } catch (e) {}
+}
+
 export function useUsers() {
   return useQuery<User[]>({
     queryKey: [api.users.list.path],
@@ -168,18 +180,6 @@ export function useReservations() {
   });
 }
 
-const SISTEMA_ID = 14;
-
-async function sendSystemMessage(receiverId: number, content: string) {
-  try {
-    await fetch("/api/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ senderId: SISTEMA_ID, receiverId, content })
-    });
-  } catch (e) {}
-}
-
 export function useCreateReservation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -187,7 +187,10 @@ export function useCreateReservation() {
       const res = await apiRequest("POST", api.reservations.create.path, data);
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] });
+      sendSystemMessage(data.userId, "A sua reserva de " + data.area + " foi registada e aguarda aprovacao.");
+    },
   });
 }
 
@@ -198,7 +201,11 @@ export function useUpdateReservation() {
       const res = await apiRequest("PUT", buildUrl(api.reservations.update.path, { id }), { status });
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] });
+      const msg = data.status === "approved" ? "A sua reserva de " + data.area + " foi aprovada!" : "A sua reserva de " + data.area + " foi rejeitada.";
+      sendSystemMessage(data.userId, msg);
+    },
   });
 }
 
@@ -217,7 +224,10 @@ export function useCreateSecurityLog() {
       const res = await apiRequest("POST", api.securityLogs.create.path, data);
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] });
+      if (data.reportedBy) sendSystemMessage(data.reportedBy, "A sua ocorrencia foi registada com sucesso. Iremos analisar brevemente.");
+    },
   });
 }
 
