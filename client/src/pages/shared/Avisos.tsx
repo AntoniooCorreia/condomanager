@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useUsers } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUsers } from "@/hooks/use-condominium";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -23,8 +23,21 @@ const CATEGORIES = [
   { key: "geral", label: "Geral", color: "bg-secondary text-foreground border-border", icon: Megaphone },
 ];
 
+const SISTEMA_ID = 14;
+
+async function sendSystemMessage(receiverId: number, content: string) {
+  try {
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senderId: SISTEMA_ID, receiverId, content })
+    });
+  } catch (e) {}
+}
+
 export function Avisos() {
   const { user } = useAuth();
+  const { data: users } = useUsers();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -48,13 +61,20 @@ export function Avisos() {
       const res = await apiRequest("POST", "/api/announcements", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
       toast({ title: "Aviso publicado com sucesso." });
       setOpen(false);
       setTitle("");
       setContent("");
       setCategory("informativo");
+      if (users) {
+        users
+          .filter(u => u.username !== "sistema" && u.id !== user?.id)
+          .forEach(u => {
+            sendSystemMessage(u.id, "Novo aviso no quadro: " + data.title + ". " + data.content);
+          });
+      }
     },
   });
 
@@ -120,7 +140,6 @@ export function Avisos() {
         )}
       </div>
 
-      {/* Filtros */}
       <div className="flex flex-wrap gap-2">
         <Button variant={filter === "todos" ? "default" : "outline"} size="sm" onClick={() => setFilter("todos")}>Todos</Button>
         {CATEGORIES.map(c => (
@@ -130,7 +149,6 @@ export function Avisos() {
         ))}
       </div>
 
-      {/* Lista de avisos */}
       <div className="space-y-4">
         {isLoading ? (
           <p className="text-muted-foreground">A carregar...</p>
