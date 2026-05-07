@@ -168,6 +168,18 @@ export function useReservations() {
   });
 }
 
+const SISTEMA_ID = 14;
+
+async function sendSystemMessage(receiverId: number, content: string) {
+  try {
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senderId: SISTEMA_ID, receiverId, content })
+    });
+  } catch (e) {}
+}
+
 export function useCreateReservation() {
   const queryClient = useQueryClient();
   return useMutation({

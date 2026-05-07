@@ -1,4 +1,4 @@
-﻿import { useUsers, useCreateUser, useDeleteUser, useUpdateUser, usePayments, useReservations, usePaymentSchedules } from "@/hooks/use-condominium";
+import { useUsers, useCreateUser, useDeleteUser, useUpdateUser, usePayments, useReservations, usePaymentSchedules } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
