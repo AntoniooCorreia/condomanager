@@ -273,7 +273,7 @@ export function Reservas() {
                       </div>
                       <p className="text-xs opacity-80">{format(new Date(r.date), "HH:mm", { locale: ptBR })}h</p>
                       {isAdmin && <p className="text-xs opacity-70 mt-1">Fração {resUser?.unit} {resUser?.name}</p>}
-                      {isAdmin && r.status === "pending" && (
+                      {isAdmin && (
                         <div className="flex gap-2 mt-3">
                           <Button size="sm" className="flex-1 h-7 bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={() => handleUpdate(r.id, "approved")} disabled={isPending}>
                             <Check className="w-3 h-3 mr-1" /> Aprovar
