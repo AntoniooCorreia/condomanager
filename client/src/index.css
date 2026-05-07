@@ -119,3 +119,7 @@
     text-wrap: balance;
   }
 }
+
+[data-sidebar=sidebar] { background: white !important; }
+[data-vaul-overlay] { background: transparent !important; }
+[data-sidebar=overlay] { background: transparent !important; opacity: 0 !important; }
