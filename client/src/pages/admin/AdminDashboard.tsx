@@ -1,85 +1,97 @@
 import { motion } from "framer-motion";
-import { Users, Euro, HardHat, AlertTriangle } from "lucide-react";
+import { Users, Euro, HardHat, AlertTriangle, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { usePayments, useUsers, useWorks, useSecurityLogs } from "@/hooks/use-condominium";
+import { usePayments, useUsers, useWorks, useSecurityLogs, useReservations } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { format, subMonths, isSameMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export function AdminDashboard() {
   const { data: users } = useUsers();
   const { data: payments } = usePayments();
   const { data: works } = useWorks();
   const { data: logs } = useSecurityLogs();
+  const { data: reservations } = useReservations();
 
-  const totalReceived = payments?.filter(p => p.status === 'paid').reduce((acc, curr) => acc + parseFloat(curr.amount), 0) || 0;
-  const totalOverdue = payments?.filter(p => p.status === 'overdue').reduce((acc, curr) => acc + parseFloat(curr.amount), 0) || 0;
-  const activeWorks = works?.filter(w => w.status === 'in_progress').length || 0;
-  const openAlerts = logs?.filter(l => l.status === 'open').length || 0;
+  const totalUsers = users?.filter(u => u.role !== "admin").length || 0;
+  const totalPaid = payments?.filter(p => p.status === "paid").reduce((acc, p) => acc + parseFloat(p.amount), 0) || 0;
+  const totalPending = payments?.filter(p => p.status === "pending").reduce((acc, p) => acc + parseFloat(p.amount), 0) || 0;
+  const activeWorks = works?.filter(w => w.status === "in_progress").length || 0;
+  const openAlerts = logs?.filter(l => l.status === "open").length || 0;
+  const pendingReservations = reservations?.filter(r => r.status === "pending").length || 0;
 
-  const revenueData = [
-    { name: 'Jan', value: 1200 },
-    { name: 'Fev', value: 1150 },
-    { name: 'Mar', value: 1300 },
-    { name: 'Abr', value: 1400 },
-    { name: 'Mai', value: totalReceived },
-  ];
+  // Grafico dos ultimos 6 meses com dados reais
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const date = subMonths(new Date(), 5 - i);
+    const monthPayments = payments?.filter(p => p.status === "paid" && isSameMonth(new Date(p.dueDate), date)) || [];
+    const total = monthPayments.reduce((acc, p) => acc + parseFloat(p.amount), 0);
+    return {
+      name: format(date, "MMM", { locale: ptBR }),
+      value: total
+    };
+  });
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-display font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Visão geral do estado do condomínio.</p>
+        <p className="text-muted-foreground mt-1">Visao geral do estado do condominio.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Proprietários" 
-          value={users?.filter(u => u.role === 'user').length || 0} 
-          icon={<Users className="w-6 h-6" />} 
+        <StatCard
+          title="Total Utilizadores"
+          value={totalUsers}
+          icon={<Users className="w-6 h-6" />}
           delay={0}
         />
-        <StatCard 
-          title="Receita Mensal" 
-          value={`€${totalReceived.toFixed(2)}`} 
-          icon={<Euro className="w-6 h-6" />} 
-          trend="8% vs mês ant."
+        <StatCard
+          title="Receita Total"
+          value={`EUR ${totalPaid.toFixed(2)}`}
+          icon={<Euro className="w-6 h-6" />}
+          trend={`${payments?.filter(p => p.status === "paid").length || 0} pagamentos`}
           trendUp={true}
           delay={0.1}
         />
-        <StatCard 
-          title="Quotas em Atraso" 
-          value={`€${totalOverdue.toFixed(2)}`} 
-          icon={<Euro className="w-6 h-6" />} 
-          trend="Precisa atenção"
+        <StatCard
+          title="Pendente"
+          value={`EUR ${totalPending.toFixed(2)}`}
+          icon={<Clock className="w-6 h-6" />}
+          trend={`${payments?.filter(p => p.status === "pending").length || 0} em falta`}
           trendUp={false}
           delay={0.2}
         />
-        <StatCard 
-          title="Alertas Abertos" 
-          value={openAlerts} 
-          icon={<AlertTriangle className="w-6 h-6" />} 
+        <StatCard
+          title="Alertas Abertos"
+          value={openAlerts}
+          icon={<AlertTriangle className="w-6 h-6" />}
           delay={0.3}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div 
+        <motion.div
           className="lg:col-span-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <Card className="p-6 h-[400px] flex flex-col shadow-sm">
-            <h3 className="text-lg font-bold mb-6 font-display">Receitas de Quotas (2024)</h3>
+            <h3 className="text-lg font-bold mb-6 font-display flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" /> Receitas dos Ultimos 6 Meses
+            </h3>
             <div className="flex-1 w-full min-h-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueData}>
+                <BarChart data={last6Months}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))'}} />
-                  <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `€${val}`} tick={{fill: 'hsl(var(--muted-foreground))'}} />
-                  <Tooltip 
-                    cursor={{fill: 'hsl(var(--secondary))'}}
-                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `EUR${val}`} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip
+                    cursor={{ fill: "hsl(var(--secondary))" }}
+                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                    formatter={(val: any) => [`EUR ${Number(val).toFixed(2)}`, "Receita"]}
                   />
                   <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -92,27 +104,46 @@ export function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
+          className="space-y-4"
         >
-          <Card className="p-6 h-[400px] shadow-sm flex flex-col">
+          <Card className="p-6 shadow-sm">
             <h3 className="text-lg font-bold mb-4 font-display flex items-center gap-2">
               <HardHat className="w-5 h-5 text-primary" /> Obras a Decorrer
             </h3>
-            <div className="flex-1 overflow-auto space-y-4 pr-2">
-              {works?.filter(w => w.status === 'in_progress').map(work => (
-                <div key={work.id} className="p-4 rounded-xl border border-border/50 bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                  <h4 className="font-semibold text-foreground">{work.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{work.description}</p>
-                  <div className="mt-3 flex items-center justify-between text-xs font-medium">
-                    <span className="text-primary bg-primary/10 px-2 py-1 rounded-md">Em Curso</span>
-                    <span className="text-muted-foreground">€{work.cost}</span>
+            <div className="space-y-3">
+              {works?.filter(w => w.status === "in_progress").slice(0, 3).map(work => (
+                <div key={work.id} className="p-3 rounded-xl border border-border/50 bg-secondary/30">
+                  <p className="font-semibold text-sm">{work.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{work.description}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <Badge className="text-xs bg-amber-50 text-amber-700 border-amber-200">Em Curso</Badge>
+                    {work.cost && <span className="text-xs text-muted-foreground">EUR {work.cost}</span>}
                   </div>
                 </div>
               ))}
-              {activeWorks === 0 && (
-                <div className="text-center py-10 text-muted-foreground">
-                  <p>Nenhuma obra a decorrer.</p>
-                </div>
-              )}
+              {activeWorks === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma obra a decorrer.</p>}
+            </div>
+          </Card>
+
+          <Card className="p-6 shadow-sm">
+            <h3 className="text-lg font-bold mb-4 font-display">Resumo</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Reservas pendentes</span>
+                <Badge variant="outline">{pendingReservations}</Badge>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Obras ativas</span>
+                <Badge variant="outline">{activeWorks}</Badge>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Alertas abertos</span>
+                <Badge variant="outline" className={openAlerts > 0 ? "border-rose-200 text-rose-600" : ""}>{openAlerts}</Badge>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Total utilizadores</span>
+                <Badge variant="outline">{totalUsers}</Badge>
+              </div>
             </div>
           </Card>
         </motion.div>
