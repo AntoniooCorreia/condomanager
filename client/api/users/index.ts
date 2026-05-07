@@ -29,13 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (req.method === "POST") {
     const { username, password, name, unit, role, userType } = req.body;
-    if (!username || !password || !name) return res.status(400).json({ message: "Campos obrigatórios em falta" });
+    if (!username || !password || !name) return res.status(400).json({ message: "Campos obrigatï¿½rios em falta" });
     const [created] = await db.insert(users).values({ username, password, name, unit, role: role || "user", userType: userType || "condomino" }).returning();
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {
     const [updated] = await db.update(users).set(req.body).where(eq(users.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "Não encontrado" });
+    if (!updated) return res.status(404).json({ message: "Nï¿½o encontrado" });
     return res.status(200).json(updated);
   }
   if (req.method === "DELETE" && id) {
