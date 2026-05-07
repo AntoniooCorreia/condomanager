@@ -8,15 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, type InsertUser, type User } from "@/shared/schema";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { type User } from "@/shared/schema";
 
 export function Condominos() {
   const { data: users, isLoading } = useUsers();
@@ -31,40 +28,45 @@ export function Condominos() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<User | null>(null);
 
-  const residents = users?.filter(u => u.username !== "admin") || [];
+  const [formData, setFormData] = useState({
+    name: "", username: "", password: "", unit: "", role: "user", userType: "condomino", relatedCondominoId: ""
+  });
+
+  const residents = users?.filter(u => u.username !== "admin" && u.username !== "sistema") || [];
   const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
   const condominos = users?.filter(u => u.userType === "condomino") || [];
 
-  const form = useForm<InsertUser & { userType?: string; relatedCondominoId?: number }>({
-    resolver: zodResolver(insertUserSchema),
-    defaultValues: { name: "", username: "", password: "", unit: "", role: "user", userType: "condomino", relatedCondominoId: undefined },
-  });
+  const resetForm = () => setFormData({ name: "", username: "", password: "", unit: "", role: "user", userType: "condomino", relatedCondominoId: "" });
 
-  const onSubmit = (data: any) => {
-    if (data.userType === "arrendatario" && !data.relatedCondominoId) {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.userType === "arrendatario" && !formData.relatedCondominoId) {
       toast({ title: "Erro", description: "Selecione o proprietario associado ao arrendatario.", variant: "destructive" });
       return;
     }
-    if (data.userType === "gestor") data.role = "admin";
-    else data.role = "user";
-    if (!data.username || !data.password || !data.name || !data.unit) {
+    if (!formData.username || !formData.password || !formData.name || !formData.unit) {
       toast({ title: "Erro", description: "Todos os campos sao obrigatorios.", variant: "destructive" });
       return;
     }
+    const data: any = {
+      ...formData,
+      role: formData.userType === "gestor" ? "admin" : "user",
+      relatedCondominoId: formData.relatedCondominoId ? parseInt(formData.relatedCondominoId) : null,
+    };
     if (editingUser) {
       updateUser.mutate({ id: editingUser.id, ...data }, {
-        onSuccess: () => { toast({ title: "Sucesso", description: "Utilizador atualizado." }); setOpen(false); setEditingUser(null); form.reset(); }
+        onSuccess: () => { toast({ title: "Sucesso", description: "Utilizador atualizado." }); setOpen(false); setEditingUser(null); resetForm(); }
       });
     } else {
       createUser.mutate(data, {
-        onSuccess: () => { toast({ title: "Sucesso", description: "Utilizador adicionado." }); setOpen(false); form.reset(); }
+        onSuccess: () => { toast({ title: "Sucesso", description: "Utilizador adicionado." }); setOpen(false); resetForm(); }
       });
     }
   };
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    form.reset({ name: user.name, username: user.username, password: user.password, unit: user.unit || "", role: user.role });
+    setFormData({ name: user.name, username: user.username, password: user.password, unit: user.unit || "", role: user.role, userType: user.userType || "condomino", relatedCondominoId: user.relatedCondominoId?.toString() || "" });
     setOpen(true);
   };
 
@@ -92,61 +94,45 @@ export function Condominos() {
           <h1 className="text-3xl font-display font-bold">Utilizadores</h1>
           <p className="text-muted-foreground mt-1">Gestao de residentes e arrendatarios.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingUser(null); resetForm(); } }}>
           <DialogTrigger asChild>
             <Button className="shadow-lg shadow-primary/20"><Plus className="w-4 h-4 mr-2" />Adicionar Utilizador</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingUser ? "Editar Utilizador" : "Novo Utilizador"}</DialogTitle></DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField control={form.control} name="unit" render={({ field }) => (
-                  <FormItem><FormLabel>Fracao</FormLabel><FormControl><Input placeholder="Ex: 101A" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="username" render={({ field }) => (
-                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="email@exemplo.com" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="password" render={({ field }) => (
-                  <FormItem><FormLabel>Palavra-passe</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="userType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Utilizador</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="gestor">Administrador de Condominio</SelectItem>
-                        <SelectItem value="condomino">Proprietario</SelectItem>
-                        <SelectItem value="arrendatario">Arrendatario</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                {form.watch("userType") === "arrendatario" && (
-                  <FormField control={form.control} name="relatedCondominoId" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Proprietario Associado</FormLabel>
-                      <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()} key={condominos.length}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione o proprietario" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {condominos.map(u => (
-                            <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-                <Button type="submit" className="w-full" disabled={createUser.isPending || updateUser.isPending}>
-                  {createUser.isPending || updateUser.isPending ? "A guardar..." : editingUser ? "Atualizar" : "Guardar"}
-                </Button>
-              </form>
-            </Form>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div><label className="text-sm font-medium">Fracao</label><Input placeholder="Ex: 101A" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} /></div>
+              <div><label className="text-sm font-medium">Nome Completo</label><Input placeholder="Nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+              <div><label className="text-sm font-medium">Email</label><Input placeholder="email@exemplo.com" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} /></div>
+              <div><label className="text-sm font-medium">Palavra-passe</label><Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} /></div>
+              <div>
+                <label className="text-sm font-medium">Tipo de Utilizador</label>
+                <Select value={formData.userType} onValueChange={v => setFormData({...formData, userType: v, relatedCondominoId: ""})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gestor">Administrador de Condominio</SelectItem>
+                    <SelectItem value="condomino">Proprietario</SelectItem>
+                    <SelectItem value="arrendatario">Arrendatario</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {formData.userType === "arrendatario" && (
+                <div>
+                  <label className="text-sm font-medium">Proprietario Associado</label>
+                  <Select value={formData.relatedCondominoId} onValueChange={v => setFormData({...formData, relatedCondominoId: v})}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o proprietario" /></SelectTrigger>
+                    <SelectContent>
+                      {condominos.map(u => (
+                        <SelectItem key={u.id} value={u.id.toString()}>{u.unit} - {u.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={createUser.isPending || updateUser.isPending}>
+                {createUser.isPending || updateUser.isPending ? "A guardar..." : editingUser ? "Atualizar" : "Guardar"}
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -214,15 +200,10 @@ export function Condominos() {
                 const condominoAssoc = users?.find(u => u.id === Number(tenant.relatedCondominoId));
                 return (
                   <motion.div key={tenant.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
-                    <Card
-                      className={`p-4 cursor-pointer transition-all hover:shadow-md border-2 ${selectedTenant?.id === tenant.id ? "border-primary" : "border-transparent"}`}
-                      onClick={() => setSelectedTenant(tenant)}
-                    >
+                    <Card className={`p-4 cursor-pointer transition-all hover:shadow-md border-2 ${selectedTenant?.id === tenant.id ? "border-primary" : "border-transparent"}`} onClick={() => setSelectedTenant(tenant)}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                            {tenant.name.charAt(0)}
-                          </div>
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">{tenant.name.charAt(0)}</div>
                           <div>
                             <p className="font-bold text-sm">{tenant.name}</p>
                             <p className="text-xs text-muted-foreground">Fracao {tenant.unit}</p>
@@ -255,9 +236,7 @@ export function Condominos() {
                     <Card className="p-6 border-border/50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                            {selectedTenant.name.charAt(0)}
-                          </div>
+                          <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">{selectedTenant.name.charAt(0)}</div>
                           <div>
                             <h2 className="font-display font-bold text-xl">{selectedTenant.name}</h2>
                             <p className="text-muted-foreground text-sm">Fracao {selectedTenant.unit} - {selectedTenant.username}</p>
@@ -270,65 +249,42 @@ export function Condominos() {
                         </div>
                       </div>
                     </Card>
-
                     <div className="grid grid-cols-3 gap-3">
-                      <Card className="p-4 text-center border-rose-100 bg-rose-50/30">
-                        <p className="text-2xl font-bold text-rose-600">{overdue.length}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Em Atraso</p>
-                      </Card>
-                      <Card className="p-4 text-center border-amber-100 bg-amber-50/30">
-                        <p className="text-2xl font-bold text-amber-600">{pending.length}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Pendentes</p>
-                      </Card>
-                      <Card className="p-4 text-center border-emerald-100 bg-emerald-50/30">
-                        <p className="text-2xl font-bold text-emerald-600">{paid.length}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Pagos</p>
-                      </Card>
+                      <Card className="p-4 text-center border-rose-100 bg-rose-50/30"><p className="text-2xl font-bold text-rose-600">{overdue.length}</p><p className="text-xs text-muted-foreground mt-1">Em Atraso</p></Card>
+                      <Card className="p-4 text-center border-amber-100 bg-amber-50/30"><p className="text-2xl font-bold text-amber-600">{pending.length}</p><p className="text-xs text-muted-foreground mt-1">Pendentes</p></Card>
+                      <Card className="p-4 text-center border-emerald-100 bg-emerald-50/30"><p className="text-2xl font-bold text-emerald-600">{paid.length}</p><p className="text-xs text-muted-foreground mt-1">Pagos</p></Card>
                     </div>
-
                     {nextPayment && (
                       <Card className="p-4 border-border/50">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Proximo Pagamento</p>
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-bold">{nextPayment.description}</p>
-                            <p className="text-sm text-muted-foreground">Vence a {format(new Date(nextPayment.dueDate), "dd 'de' MMMM", { locale: ptBR })}</p>
-                          </div>
+                          <div><p className="font-bold">{nextPayment.description}</p><p className="text-sm text-muted-foreground">Vence a {format(new Date(nextPayment.dueDate), "dd 'de' MMMM", { locale: ptBR })}</p></div>
                           <p className="font-bold text-lg text-primary">EUR{Number(nextPayment.amount).toFixed(2)}</p>
                         </div>
                       </Card>
                     )}
-
                     {nextReservation && (
                       <Card className="p-4 border-border/50">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Proxima Reserva</p>
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-primary" />
-                          <div>
-                            <p className="font-bold capitalize">{nextReservation.area}</p>
-                            <p className="text-sm text-muted-foreground">{format(new Date(nextReservation.date), "dd 'de' MMMM, HH:mm", { locale: ptBR })}</p>
-                          </div>
+                          <div><p className="font-bold capitalize">{nextReservation.area}</p><p className="text-sm text-muted-foreground">{format(new Date(nextReservation.date), "dd 'de' MMMM, HH:mm", { locale: ptBR })}</p></div>
                         </div>
                       </Card>
                     )}
-
                     {tenantSchedules.length > 0 && (
                       <Card className="p-4 border-border/50">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cobrancas Periodicas</p>
                         <div className="space-y-2">
                           {tenantSchedules.map(s => (
                             <div key={s.id} className="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-2 text-sm">
-                              <div className="flex items-center gap-2 text-blue-700">
-                                <RepeatIcon className="w-3 h-3" />
-                                <span>{s.description}</span>
-                              </div>
+                              <div className="flex items-center gap-2 text-blue-700"><RepeatIcon className="w-3 h-3" /><span>{s.description}</span></div>
                               <span className="font-bold text-blue-700">EUR{s.amount}/mes - dia {s.dayOfMonth}</span>
                             </div>
                           ))}
                         </div>
                       </Card>
                     )}
-
                     {overdue.length > 0 && (
                       <Card className="p-4 border-rose-200 bg-rose-50/20">
                         <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider mb-3">Pagamentos em Atraso</p>
