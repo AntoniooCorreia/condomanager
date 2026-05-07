@@ -34,6 +34,7 @@ export function Condominos() {
   const residents = users?.filter(u => u.username !== "admin") || [];
   const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
   const condominos = users?.filter(u => u.userType === "condomino") || [];
+  console.log("condominos:", condominos, "all users userTypes:", users?.map(u => u.userType));
 
   const form = useForm<InsertUser & { userType?: string; relatedCondominoId?: number }>({
     resolver: zodResolver(insertUserSchema),
