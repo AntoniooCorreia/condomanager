@@ -76,7 +76,15 @@ export function useUpdateWork() {
       const res = await apiRequest("PUT", buildUrl(api.works.update.path, { id }), data);
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.works.list.path] }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [api.works.list.path] });
+      if (data.assignedUserIds && data.assignedUserIds.length > 0) {
+        const statusMsg = data.status === "completed" ? "foi concluida" : data.status === "in_progress" ? "esta em curso" : "esta em planeamento";
+        data.assignedUserIds.forEach((uid: number) => {
+          sendSystemMessage(uid, "Atualizacao na obra " + data.title + ": " + statusMsg + ".");
+        });
+      }
+    },
   });
 }
 
@@ -174,7 +182,14 @@ export function useCreateWork() {
       const res = await apiRequest("POST", api.works.create.path, data);
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.works.list.path] }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [api.works.list.path] });
+      if (data.assignedUserIds && data.assignedUserIds.length > 0) {
+        data.assignedUserIds.forEach((uid: number) => {
+          sendSystemMessage(uid, "Nova obra registada: " + data.title + ". " + data.description);
+        });
+      }
+    },
   });
 }
 
