@@ -34,7 +34,6 @@ export function Condominos() {
   const residents = users?.filter(u => u.username !== "admin") || [];
   const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
   const condominos = users?.filter(u => u.userType === "condomino") || [];
-  console.log("condominos:", condominos, "all users userTypes:", users?.map(u => u.userType));
 
   const form = useForm<InsertUser & { userType?: string; relatedCondominoId?: number }>({
     resolver: zodResolver(insertUserSchema),
@@ -131,7 +130,7 @@ export function Condominos() {
                   <FormField control={form.control} name="relatedCondominoId" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Proprietario Associado</FormLabel>
-                      <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
+                      <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()} key={condominos.length}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecione o proprietario" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {condominos.map(u => (
