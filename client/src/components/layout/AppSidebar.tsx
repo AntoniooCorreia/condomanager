@@ -48,7 +48,7 @@ export function AppSidebar() {
   const links = isAdmin ? adminLinks : baseUserLinks;
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant="inset" className="bg-white">
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
           <div className="flex items-center px-4 py-6 mb-2">
