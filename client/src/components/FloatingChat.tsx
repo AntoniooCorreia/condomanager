@@ -4,10 +4,16 @@ import { useUsers, useMessages, useSendMessage } from "@/hooks/use-condominium";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, ChevronLeft, Search } from "lucide-react";
+import { MessageCircle, X, Send, ChevronLeft, Search, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 interface NotificationToast {
   id: number;
@@ -28,6 +34,25 @@ export function FloatingChat() {
   const sendMessage = useSendMessage();
   const bottomRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("message-images").upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("message-images").getPublicUrl(fileName);
+      if (!selectedUserId || !user) return;
+      sendMessage.mutate({ senderId: user.id, receiverId: selectedUserId, content: `[IMAGE]${urlData.publicUrl}` });
+    } catch (err) {
+      console.error("Upload error:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
   const initialLoadRef = useRef(true);
 
   useEffect(() => {
@@ -243,7 +268,11 @@ export function FloatingChat() {
                         <motion.div key={msg.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMine ? "bg-primary text-primary-foreground rounded-tr-sm" : isSystem ? "bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-tl-sm" : "bg-secondary rounded-tl-sm"}`}>
                             {isSystem && <p className="text-xs font-bold text-emerald-600 mb-1">SmartCondo</p>}
-                            <p>{msg.content}</p>
+                            {msg.content.startsWith("[IMAGE]") ? (
+                              <img src={msg.content.replace("[IMAGE]", "")} alt="imagem" className="max-w-full rounded-lg cursor-pointer hover:opacity-90" onClick={() => window.open(msg.content.replace("[IMAGE]", ""), "_blank")} />
+                            ) : (
+                              <p>{msg.content}</p>
+                            )}
                             <p className={`text-xs mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                               {format(new Date(msg.createdAt), "HH:mm", { locale: ptBR })}
                             </p>
@@ -255,6 +284,10 @@ export function FloatingChat() {
                   </div>
                   {selectedContact.username !== "sistema" && (
                     <div className="p-3 border-t flex gap-2">
+                      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
+                      <Button variant="ghost" size="icon" className="w-9 h-9 flex-shrink-0" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                        <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                      </Button>
                       <Input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey} placeholder="Mensagem..." className="flex-1 h-9 text-sm" />
                       <Button onClick={handleSend} disabled={!input.trim() || sendMessage.isPending} className="w-9 h-9 p-0 flex-shrink-0">
                         <Send className="w-3.5 h-3.5" />
