@@ -1,6 +1,6 @@
 import { 
   LayoutDashboard, Users, CreditCard, HardHat, 
-  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt, MessageCircle, Megaphone
+  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt, MessageCircle, Megaphone, FileText
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -30,6 +30,7 @@ export function AppSidebar() {
     { title: "Seguranca", url: "/admin/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/admin/camaras", icon: Camera },
     { title: "Quadro de Avisos", url: "/admin/avisos", icon: Megaphone },
+    { title: "Documentos", url: "/admin/documentos", icon: FileText },
     { title: "Mensagens", url: "/admin/chat", icon: MessageCircle },
   ];
 
@@ -50,6 +51,7 @@ export function AppSidebar() {
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
     { title: "Reservar Areas", url: "/user/reservar", icon: Calendar },
     { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
+    { title: "Documentos", url: "/user/documentos", icon: FileText },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
