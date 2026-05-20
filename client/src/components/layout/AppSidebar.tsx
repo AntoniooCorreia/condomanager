@@ -48,6 +48,7 @@ export function AppSidebar() {
 
   const arrendatarioLinks = [
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
+    { title: "Reservar Areas", url: "/user/reservar", icon: Calendar },
     { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
