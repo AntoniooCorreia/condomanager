@@ -19,6 +19,7 @@ export function AppSidebar() {
   const [location] = useLocation();
   const isAdmin = user?.role === "admin";
   const isCondomino = user?.userType === "condomino" || user?.userType === "gestor";
+  const isArrendatario = user?.userType === "arrendatario";
 
   const adminLinks = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -32,7 +33,7 @@ export function AppSidebar() {
     { title: "Mensagens", url: "/admin/chat", icon: MessageCircle },
   ];
 
-  const baseUserLinks = [
+  const condominoLinks = [
     { title: "Dashboard", url: "/user", icon: LayoutDashboard },
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
     ...(isCondomino ? [{ title: "Cobrancas", url: "/user/cobrancas", icon: Receipt }] : []),
@@ -45,7 +46,13 @@ export function AppSidebar() {
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
-  const links = isAdmin ? adminLinks : baseUserLinks;
+  const arrendatarioLinks = [
+    { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
+    { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
+    { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
+  ];
+
+  const links = isAdmin ? adminLinks : isArrendatario ? arrendatarioLinks : condominoLinks;
 
   return (
     <Sidebar variant="inset" className="bg-white">
@@ -56,7 +63,7 @@ export function AppSidebar() {
           </div>
 
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold opacity-70">
-            {isAdmin ? "Administracao" : "Area do Condomino"}
+            {isAdmin ? "Administracao" : isArrendatario ? "Area do Arrendatario" : "Area do Condomino"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -95,7 +102,9 @@ export function AppSidebar() {
               </Avatar>
               <div className="flex flex-col items-start flex-1 min-w-0">
                 <span className="text-sm font-bold truncate w-full">{user?.name}</span>
-                <span className="text-xs text-muted-foreground truncate w-full">{user?.unit ? `Fracao ${user.unit}` : "Administrador"}</span>
+                <span className="text-xs text-muted-foreground truncate w-full">
+                  {isAdmin ? "Administrador" : isArrendatario ? "Arrendatario" : user?.unit ? `Fracao ${user.unit}` : "Condomino"}
+                </span>
               </div>
               <Settings className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </button>
