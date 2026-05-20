@@ -3,9 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
 import pkg from "pg";
 import { eq } from "drizzle-orm";
-
 const { Pool } = pkg;
-
 const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull(),
@@ -17,25 +15,22 @@ const users = pgTable("users", {
   userType: text("user_type").notNull().default("condomino"),
   relatedCondominoId: integer("related_condomino_id"),
 });
-
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { users } });
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const id = req.query.id ? Number(req.query.id) : null;
-
   if (req.method === "GET") {
     const all = await db.select().from(users);
     return res.status(200).json(all);
   }
   if (req.method === "POST") {
-    const { username, password, name, unit, role, userType } = req.body;
-    if (!username || !password || !name) return res.status(400).json({ message: "Campos obrigat�rios em falta" });
-    const [created] = await db.insert(users).values({ username, password, name, unit, role: role || "user", userType: userType || "condomino" }).returning();
+    const { username, password, name, unit, role, userType, relatedCondominoId } = req.body;
+    if (!username || !password || !name) return res.status(400).json({ message: "Campos obrigatorios em falta" });
+    const [created] = await db.insert(users).values({ username, password, name, unit, role: role || "user", userType: userType || "condomino", relatedCondominoId: relatedCondominoId ? Number(relatedCondominoId) : null }).returning();
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {
     const [updated] = await db.update(users).set(req.body).where(eq(users.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "N�o encontrado" });
+    if (!updated) return res.status(404).json({ message: "Nao encontrado" });
     return res.status(200).json(updated);
   }
   if (req.method === "DELETE" && id) {
