@@ -71,9 +71,7 @@ export function FloatingChat() {
       return [...admins, ...otherCondominos, ...myTenants];
     }
     if (user.userType === "arrendatario") {
-      const myCondomino = users.filter(u => u.id === Number(user.relatedCondominoId));
-      const admins = users.filter(u => u.role === "admin" && u.username !== "sistema");
-      return [...admins, ...myCondomino];
+      return users.filter(u => u.id === Number(user.relatedCondominoId));
     }
     return users.filter(u => u.role === "admin" && u.username !== "sistema");
   }, [users, user]);
