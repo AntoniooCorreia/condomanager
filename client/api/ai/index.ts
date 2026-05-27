@@ -3,34 +3,21 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
-  const { messages, context } = req.body;
-  if (!messages) return res.status(400).json({ message: "messages em falta" });
-
-  const systemPrompt = `Es o SmartCondo IA, um assistente especializado em gestao de condominios portugueses.
-Es integrado na plataforma CondoManager e tens acesso aos dados reais do condominio.
-
-ESPECIALIDADES:
-- Legislacao portuguesa de condominios (Lei 8/2022, Codigo Civil artigos 1414 a 1438-A, NRAU)
-- Regulamento interno do condominio
-- Gestao de quotas e pagamentos
-- Reservas de areas comuns (piscina, ginasio, salao de festas)
-- Obras e manutencao
-- Seguranca e ocorrencias
-- Direitos e obrigacoes de condominios e arrendatarios
-
-${context || ""}
-
-REGRAS:
-- Responde sempre em portugues europeu
-- Se preciso, util e profissional
-- Quando citares legislacao, indica o artigo correto
-- Se nao souberes algo, diz claramente
-- Mantem respostas concisas mas completas`;
-
   try {
+    const { messages, context } = req.body;
+    if (!messages) return res.status(400).json({ message: "messages em falta" });
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ message: "GEMINI_API_KEY nao configurada" });
+    }
+
+    const systemPrompt = `Es o SmartCondo IA, especialista em condominios portugueses.
+${context || ""}
+Responde sempre em portugues europeu. Se preciso e profissional.`;
+
     const geminiMessages = [
       { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Entendido! Estou pronto para ajudar com questoes sobre o condominio." }] },
+      { role: "model", parts: [{ text: "Entendido! Estou pronto para ajudar." }] },
       ...messages.map((m: any) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
@@ -38,7 +25,7 @@ REGRAS:
     ];
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
-    
+
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,14 +33,14 @@ REGRAS:
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
-      return res.status(500).json({ message: "Gemini error", details: data });
+      return res.status(500).json({ message: "Gemini error", status: response.status, details: data });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar resposta.";
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
     return res.status(200).json({ content: text });
   } catch (err: any) {
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message, stack: err.stack });
   }
 }
