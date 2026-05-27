@@ -85,19 +85,17 @@ REGRAS:
 - Se não souberes algo, diz claramente
 - Mantém respostas concisas mas completas`;
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: systemPrompt,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          context: buildContext(),
         }),
       });
 
       const data = await response.json();
-      const assistantText = data.content?.[0]?.text || "Desculpe, ocorreu um erro. Tente novamente.";
+      const assistantText = data.content || "Desculpe, ocorreu um erro. Tente novamente.";
 
       setMessages(prev => [...prev, { role: "assistant", content: assistantText, createdAt: new Date().toISOString() }]);
     } catch {
