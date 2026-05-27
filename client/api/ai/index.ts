@@ -28,20 +28,21 @@ REGRAS:
 - Mantem respostas concisas mas completas`;
 
   try {
-    const geminiMessages = messages.map((m: any) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    }));
+    const geminiMessages = [
+      { role: "user", parts: [{ text: systemPrompt }] },
+      { role: "model", parts: [{ text: "Entendido! Estou pronto para ajudar com questoes sobre o condominio." }] },
+      ...messages.map((m: any) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      })),
+    ];
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
     
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: geminiMessages,
-      }),
+      body: JSON.stringify({ contents: geminiMessages }),
     });
 
     const data = await response.json();
