@@ -33,7 +33,9 @@ REGRAS:
       parts: [{ text: m.content }],
     }));
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -43,6 +45,11 @@ REGRAS:
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      return res.status(500).json({ message: "Gemini error", details: data });
+    }
+
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar resposta.";
     return res.status(200).json({ content: text });
   } catch (err: any) {
