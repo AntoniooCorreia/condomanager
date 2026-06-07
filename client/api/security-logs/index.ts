@@ -3,7 +3,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import pkg from "pg";
 import { eq } from "drizzle-orm";
+
 const { Pool } = pkg;
+
 const securityLogs = pgTable("security_logs", {
   id: serial("id").primaryKey(),
   reportedBy: integer("reported_by"),
@@ -12,9 +14,12 @@ const securityLogs = pgTable("security_logs", {
   status: text("status").notNull(),
   imageUrl: text("image_url"),
 });
+
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { securityLogs } });
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const id = req.query.id ? Number(req.query.id) : null;
+
   if (req.method === "GET") {
     const all = await db.select().from(securityLogs);
     return res.status(200).json(all);
