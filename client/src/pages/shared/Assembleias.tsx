@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Users, Calendar, Vote, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Plus, Trash2, Users, Calendar, Vote, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -14,7 +14,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function Assembleias() {
   const { user } = useAuth();
@@ -44,7 +43,7 @@ export function Assembleias() {
     queryKey: ["/api/assembleias/votacoes", selectedAssembleia?.id],
     enabled: !!selectedAssembleia,
     queryFn: async () => {
-      const res = await fetch(`/api/assembleias?resource=votacoes&assembleiaId=${selectedAssembleia.id}`);
+      const res = await fetch("/api/assembleias?resource=votacoes&assembleiaId=" + selectedAssembleia.id);
       if (!res.ok) return [];
       return res.json();
     },
@@ -65,7 +64,7 @@ export function Assembleias() {
 
   const deleteAssembleia = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/assembleias?id=${id}`);
+      await apiRequest("DELETE", "/api/assembleias?id=" + id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/assembleias"] });
@@ -88,11 +87,17 @@ export function Assembleias() {
 
   const closeVotacao = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("PUT", `/api/assembleias?resource=votacoes&id=${id}`, { status: "fechada" });
+      const res = await apiRequest("PUT", "/api/assembleias?resource=votacoes&id=" + id, { status: "fechada" });
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/assembleias/votacoes", selectedAssembleia?.id] }),
   });
+
+  const updateStatus = async (status: string) => {
+    await apiRequest("PUT", "/api/assembleias?id=" + selectedAssembleia.id, { status });
+    queryClient.invalidateQueries({ queryKey: ["/api/assembleias"] });
+    setSelectedAssembleia({ ...selectedAssembleia, status });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -101,6 +106,10 @@ export function Assembleias() {
       case "concluida": return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 className="w-3 h-3 mr-1" />Concluida</Badge>;
       default: return <Badge>{status}</Badge>;
     }
+  };
+
+  const toggleUser = (id: number) => {
+    setAllowedUsers(prev => prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]);
   };
 
   return (
@@ -118,13 +127,26 @@ export function Assembleias() {
             <DialogTrigger asChild>
               <Button className="shadow-lg shadow-primary/20"><Plus className="w-4 h-4 mr-2" /> Nova Assembleia</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Nova Assembleia</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div><label className="text-sm font-medium mb-1 block">Titulo</label><Input placeholder="Ex: Assembleia Ordinaria 2025" value={title} onChange={e => setTitle(e.target.value)} /></div>
                 <div><label className="text-sm font-medium mb-1 block">Data e Hora</label><Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} /></div>
                 <div><label className="text-sm font-medium mb-1 block">Descricao</label><Textarea placeholder="Ordem de trabalhos..." value={description} onChange={e => setDescription(e.target.value)} rows={3} /></div>
-                <Button className="w-full" disabled={!title || !date || createAssembleia.isPending} onClick={() => createAssembleia.mutate({ title, description, date, createdBy: user?.id })}>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Condominios com direito a voto</label>
+                  <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                    {condominos.length === 0 && <p className="text-sm text-muted-foreground">Sem condominios registados.</p>}
+                    {condominos.map(c => (
+                      <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-secondary/30 rounded p-1">
+                        <input type="checkbox" checked={allowedUsers.includes(c.id)} onChange={() => toggleUser(c.id)} className="rounded" />
+                        <span className="text-sm">{c.name} - Fracao {c.unit}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Se nenhum for selecionado, todos podem votar.</p>
+                </div>
+                <Button className="w-full" disabled={!title || !date || createAssembleia.isPending} onClick={() => createAssembleia.mutate({ title, description, date, createdBy: user?.id, allowedUsers })}>
                   {createAssembleia.isPending ? "A criar..." : "Criar Assembleia"}
                 </Button>
               </div>
@@ -134,7 +156,6 @@ export function Assembleias() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lista de assembleias */}
         <div className="space-y-3">
           {isLoading ? <p className="text-muted-foreground text-sm">A carregar...</p> :
           !assembleias || assembleias.length === 0 ? (
@@ -145,7 +166,7 @@ export function Assembleias() {
           ) : assembleias.map((a: any, i: number) => (
             <motion.div key={a.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
               <Card
-                className={`p-4 cursor-pointer transition-all hover:shadow-md border-2 ${selectedAssembleia?.id === a.id ? "border-primary" : "border-transparent"}`}
+                className={"p-4 cursor-pointer transition-all hover:shadow-md border-2 " + (selectedAssembleia?.id === a.id ? "border-primary" : "border-transparent")}
                 onClick={() => setSelectedAssembleia(a)}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -163,7 +184,6 @@ export function Assembleias() {
           ))}
         </div>
 
-        {/* Detalhe da assembleia */}
         <div className="lg:col-span-2">
           {!selectedAssembleia ? (
             <Card className="p-12 text-center border-dashed h-full flex flex-col items-center justify-center">
@@ -181,43 +201,39 @@ export function Assembleias() {
                       {format(new Date(selectedAssembleia.date), "dd 'de' MMMM 'de' yyyy 'as' HH:mm", { locale: ptBR })}
                     </p>
                     {selectedAssembleia.description && <p className="text-sm mt-2">{selectedAssembleia.description}</p>}
+                    {selectedAssembleia.allowedUsers && selectedAssembleia.allowedUsers.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <span className="text-xs text-muted-foreground">Votantes:</span>
+                        {selectedAssembleia.allowedUsers.map((uid: number) => {
+                          const u = users?.find(u => u.id === uid);
+                          return u ? <Badge key={uid} variant="outline" className="text-xs">{u.name}</Badge> : null;
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
                     {getStatusBadge(selectedAssembleia.status)}
+                    {isAdmin && selectedAssembleia.status === "agendada" && (
+                      <Button size="sm" variant="outline" onClick={() => updateStatus("em_curso")}>Iniciar</Button>
+                    )}
+                    {isAdmin && selectedAssembleia.status === "em_curso" && (
+                      <Button size="sm" variant="outline" onClick={() => updateStatus("concluida")}>Concluir</Button>
+                    )}
                     {isAdmin && (
-                      <>
-                        {selectedAssembleia.status === "agendada" && (
-                          <Button size="sm" variant="outline" onClick={() => {
-                            apiRequest("PUT", `/api/assembleias?id=${selectedAssembleia.id}`, { status: "em_curso" }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ["/api/assembleias"] });
-                              setSelectedAssembleia({ ...selectedAssembleia, status: "em_curso" });
-                            });
-                          }}>Iniciar</Button>
-                        )}
-                        {selectedAssembleia.status === "em_curso" && (
-                          <Button size="sm" variant="outline" onClick={() => {
-                            apiRequest("PUT", `/api/assembleias?id=${selectedAssembleia.id}`, { status: "concluida" }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ["/api/assembleias"] });
-                              setSelectedAssembleia({ ...selectedAssembleia, status: "concluida" });
-                            });
-                          }}>Concluir</Button>
-                        )}
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-500" onClick={() => deleteAssembleia.mutate(selectedAssembleia.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-500" onClick={() => deleteAssembleia.mutate(selectedAssembleia.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     )}
                   </div>
                 </div>
               </Card>
 
-              {/* Votacoes */}
               <Card className="p-6 border-border/50">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-lg">Votacoes</h3>
                   {isAdmin && selectedAssembleia.status === "em_curso" && (
                     <div className="flex gap-2">
-                      <Input placeholder="Nova questao de votacao..." value={newQuestion} onChange={e => setNewQuestion(e.target.value)} className="w-64 h-8 text-sm" />
+                      <Input placeholder="Nova questao..." value={newQuestion} onChange={e => setNewQuestion(e.target.value)} className="w-64 h-8 text-sm" />
                       <Button size="sm" disabled={!newQuestion} onClick={() => createVotacao.mutate({ assembleiaId: selectedAssembleia.id, question: newQuestion })}>
                         <Plus className="w-3.5 h-3.5" />
                       </Button>
@@ -230,7 +246,14 @@ export function Assembleias() {
                 ) : (
                   <div className="space-y-4">
                     {votacoes.map((v: any) => (
-                      <VotacaoItem key={v.id} votacao={v} userId={user?.id || 0} isAdmin={isAdmin} onClose={() => closeVotacao.mutate(v.id)} />
+                      <VotacaoItem
+                        key={v.id}
+                        votacao={v}
+                        userId={user?.id || 0}
+                        isAdmin={isAdmin}
+                        onClose={() => closeVotacao.mutate(v.id)}
+                        allowedUsers={selectedAssembleia.allowedUsers || []}
+                      />
                     ))}
                   </div>
                 )}
@@ -243,14 +266,16 @@ export function Assembleias() {
   );
 }
 
-function VotacaoItem({ votacao, userId, isAdmin, onClose }: { votacao: any; userId: number; isAdmin: boolean; onClose: () => void }) {
+function VotacaoItem({ votacao, userId, isAdmin, onClose, allowedUsers }: {
+  votacao: any; userId: number; isAdmin: boolean; onClose: () => void; allowedUsers: number[];
+}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: votos } = useQuery({
     queryKey: ["/api/assembleias/votos", votacao.id],
     queryFn: async () => {
-      const res = await fetch(`/api/assembleias?resource=votos&votacaoId=${votacao.id}`);
+      const res = await fetch("/api/assembleias?resource=votos&votacaoId=" + votacao.id);
       if (!res.ok) return [];
       return res.json();
     },
@@ -262,6 +287,7 @@ function VotacaoItem({ votacao, userId, isAdmin, onClose }: { votacao: any; user
   const totalNao = votos?.filter((v: any) => v.voto === "nao").length || 0;
   const totalAbstencao = votos?.filter((v: any) => v.voto === "abstencao").length || 0;
   const total = votos?.length || 0;
+  const podeVotar = allowedUsers.length === 0 || allowedUsers.includes(userId);
 
   const votar = useMutation({
     mutationFn: async (voto: string) => {
@@ -289,7 +315,6 @@ function VotacaoItem({ votacao, userId, isAdmin, onClose }: { votacao: any; user
         </div>
       </div>
 
-      {/* Resultados */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-emerald-50 rounded-lg p-2 text-center">
           <p className="text-lg font-bold text-emerald-600">{totalSim}</p>
@@ -305,24 +330,24 @@ function VotacaoItem({ votacao, userId, isAdmin, onClose }: { votacao: any; user
         </div>
       </div>
 
-      {/* Barra de progresso */}
       {total > 0 && (
         <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mb-3">
           <div className="h-full flex">
-            <div className="bg-emerald-500 transition-all" style={{ width: `${(totalSim/total)*100}%` }} />
-            <div className="bg-rose-500 transition-all" style={{ width: `${(totalNao/total)*100}%` }} />
-            <div className="bg-secondary-foreground/20 transition-all" style={{ width: `${(totalAbstencao/total)*100}%` }} />
+            <div className="bg-emerald-500 transition-all" style={{ width: (totalSim/total*100) + "%" }} />
+            <div className="bg-rose-500 transition-all" style={{ width: (totalNao/total*100) + "%" }} />
           </div>
         </div>
       )}
 
-      {/* Botoes de votacao */}
-      {votacao.status === "aberta" && !meuVoto && (
+      {votacao.status === "aberta" && !meuVoto && podeVotar && (
         <div className="flex gap-2">
           <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => votar.mutate("sim")}>Sim</Button>
           <Button size="sm" variant="outline" className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => votar.mutate("nao")}>Nao</Button>
           <Button size="sm" variant="outline" className="flex-1" onClick={() => votar.mutate("abstencao")}>Abstencao</Button>
         </div>
+      )}
+      {votacao.status === "aberta" && !meuVoto && !podeVotar && (
+        <p className="text-xs text-muted-foreground text-center py-1">Nao tem permissao para votar nesta assembleia.</p>
       )}
       {meuVoto && (
         <p className="text-xs text-muted-foreground text-center py-1">
