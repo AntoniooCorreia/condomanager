@@ -15,6 +15,8 @@ const documents = pgTable("documents", {
   content: text("content"),
   createdBy: integer("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  visibility: text("visibility").notNull().default("todos"),
+  visibleUserIds: integer("visible_user_ids").array(),
 });
 
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { documents } });
@@ -27,8 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   }
   if (req.method === "POST") {
-    const { title, description, category, fileUrl, content, createdBy } = req.body;
-    const [created] = await db.insert(documents).values({ title, description, category: category || "geral", fileUrl, content, createdBy: createdBy ? Number(createdBy) : null }).returning();
+    const { title, description, category, fileUrl, content, createdBy, visibility, visibleUserIds } = req.body;
+    const [created] = await db.insert(documents).values({
+      title, description, category: category || "geral", fileUrl, content,
+      createdBy: createdBy ? Number(createdBy) : null,
+      visibility: visibility || "todos",
+      visibleUserIds: visibleUserIds || [],
+    }).returning();
     return res.status(201).json(created);
   }
   if (req.method === "DELETE" && id) {

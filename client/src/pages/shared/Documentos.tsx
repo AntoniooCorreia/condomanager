@@ -48,6 +48,10 @@ export function Documentos() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [resumeGenerating, setResumeGenerating] = useState(false);
+  const [visibility, setVisibility] = useState("todos");
+  const [visibleUserIds, setVisibleUserIds] = useState<number[]>([]);
+  const condominos = users?.filter(u => u.userType === "condomino") || [];
+  const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role === "admin";
 
@@ -85,7 +89,7 @@ export function Documentos() {
 
   const resetForm = () => {
     setTitle(""); setDescription(""); setCategory("geral");
-    setContent(""); setFileUrl(null); setFileName(null); setVersion("1.0");
+    setContent(""); setFileUrl(null); setFileName(null); setVersion("1.0"); setVisibility("todos"); setVisibleUserIds([]);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -133,7 +137,21 @@ export function Documentos() {
     }
   };
 
-  const filtered = (documents || [])
+  const isArrendatario = user?.userType === "arrendatario";
+
+  const visibleDocs = (documents || []).filter((d: any) => {
+    // Arrendatarios nao veem seguros, atas
+    if (isArrendatario && ["seguro", "ata"].includes(d.category)) return false;
+    // Verificar visibilidade
+    if (d.visibility === "todos") return true;
+    if (d.visibility === "proprietarios" && user?.userType === "condomino") return true;
+    if (d.visibility === "arrendatarios" && isArrendatario) return true;
+    if (d.visibility === "especificos" && d.visibleUserIds?.includes(user?.id)) return true;
+    if (user?.role === "admin") return true;
+    return false;
+  });
+
+  const filtered = visibleDocs
     .filter((d: any) => filter === "todos" || d.category === filter)
     .filter((d: any) => !search || d.title.toLowerCase().includes(search.toLowerCase()) || d.description?.toLowerCase().includes(search.toLowerCase()));
 
@@ -206,7 +224,7 @@ export function Documentos() {
                     </p>
                   )}
                 </div>
-                <Button className="w-full" disabled={!title || createDocument.isPending || uploading} onClick={() => createDocument.mutate({ title, description, category, fileUrl, content: content + (version ? "\n\nVersao: " + version : ""), createdBy: user?.id })}>
+                <Button className="w-full" disabled={!title || createDocument.isPending || uploading} onClick={() => createDocument.mutate({ title, description, category, fileUrl, content: content + (version ? "\n\nVersao: " + version : ""), createdBy: user?.id, visibility, visibleUserIds })}>
                   {createDocument.isPending ? "A publicar..." : "Publicar Documento"}
                 </Button>
               </div>

@@ -55,7 +55,7 @@ export function Avisos() {
   });
 
   const isAdmin = user?.role === "admin";
-  const condominos = users?.filter(u => u.userType === "condomino" || u.userType === "arrendatario") || [];
+  const condominos = users?.filter(u => u.userType === "condomino") || [];
 
   const { data: announcements, isLoading } = useQuery({
     queryKey: ["/api/announcements"],
