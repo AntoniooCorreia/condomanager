@@ -11,13 +11,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ message: "GEMINI_API_KEY nao configurada" });
     }
 
-    const systemPrompt = `Es o SmartCondo IA, especialista em condominios portugueses.
-${context || ""}
-Responde sempre em portugues europeu. Se preciso e profissional.`;
-
-    const geminiMessages = [
-      { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Entendido! Estou pronto para ajudar." }] },
+    const allMessages = [
+      {
+        role: "user",
+        parts: [{ text: `Es o SmartCondo IA, especialista em condominios portugueses. ${context || ""} Responde em portugues europeu.` }]
+      },
+      { role: "model", parts: [{ text: "Entendido!" }] },
       ...messages.map((m: any) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
@@ -29,18 +28,19 @@ Responde sempre em portugues europeu. Se preciso e profissional.`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: geminiMessages }),
+      body: JSON.stringify({ contents: allMessages }),
     });
 
-    const data = await response.json();
-
+    const rawText = await response.text();
+    
     if (!response.ok) {
-      return res.status(500).json({ message: "Gemini error", status: response.status, details: data });
+      return res.status(200).json({ content: `Erro Gemini ${response.status}: ${rawText}` });
     }
 
+    const data = JSON.parse(rawText);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
     return res.status(200).json({ content: text });
   } catch (err: any) {
-    return res.status(500).json({ message: err.message, stack: err.stack });
+    return res.status(200).json({ content: `Erro: ${err.message}` });
   }
 }
