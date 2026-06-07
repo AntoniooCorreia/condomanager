@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { FloatingChat } from "@/components/FloatingChat";
+import { SmartCondoChat } from "@/components/SmartCondoChat";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -63,6 +64,7 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
         </div>
       </div>
       <FloatingChat />
+      <SmartCondoChat />
       
     </SidebarProvider>
   );

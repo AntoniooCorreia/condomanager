@@ -32,7 +32,7 @@ export function AppSidebar() {
     { title: "Quadro de Avisos", url: "/admin/avisos", icon: Megaphone },
     { title: "Assembleias", url: "/admin/assembleias", icon: Vote },
     { title: "Documentos", url: "/admin/documentos", icon: FileText },
-    { title: "Mensagens", url: "/admin/chat", icon: MessageCircle },
+
   ];
 
   const condominoLinks = [
@@ -46,7 +46,7 @@ export function AppSidebar() {
     { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
     { title: "Assembleias", url: "/user/assembleias", icon: Vote },
     { title: "Documentos", url: "/user/documentos", icon: FileText },
-    { title: "Mensagens", url: "/user/chat", icon: MessageCircle },
+
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
 
