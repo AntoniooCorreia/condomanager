@@ -1,6 +1,6 @@
 import { 
   LayoutDashboard, Users, CreditCard, HardHat, 
-  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt, MessageCircle, Megaphone, FileText
+  Calendar, ShieldAlert, UserCircle, LogOut, Settings, Camera, Receipt, MessageCircle, Megaphone, FileText, Vote
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -30,7 +30,7 @@ export function AppSidebar() {
     { title: "Seguranca", url: "/admin/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/admin/camaras", icon: Camera },
     { title: "Quadro de Avisos", url: "/admin/avisos", icon: Megaphone },
-    { title: "Assembleias", url: "/admin/assembleias", icon: VoteIcon },
+    { title: "Assembleias", url: "/admin/assembleias", icon: Vote },
     { title: "Documentos", url: "/admin/documentos", icon: FileText },
     { title: "Mensagens", url: "/admin/chat", icon: MessageCircle },
   ];
@@ -44,6 +44,8 @@ export function AppSidebar() {
     { title: "Ocorrencias", url: "/user/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/user/camaras", icon: Camera },
     { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
+    { title: "Assembleias", url: "/user/assembleias", icon: Vote },
+    { title: "Documentos", url: "/user/documentos", icon: FileText },
     { title: "Mensagens", url: "/user/chat", icon: MessageCircle },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
@@ -52,7 +54,7 @@ export function AppSidebar() {
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
     { title: "Reservar Areas", url: "/user/reservar", icon: Calendar },
     { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
-    { title: "Assembleias", url: "/user/assembleias", icon: VoteIcon },
+    { title: "Assembleias", url: "/user/assembleias", icon: Vote },
     { title: "Documentos", url: "/user/documentos", icon: FileText },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];
@@ -66,7 +68,6 @@ export function AppSidebar() {
           <div className="flex items-center px-4 py-6 mb-2">
             <img src="/logoazulpng.png" alt="Logo" className="w-40" />
           </div>
-
           <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold opacity-70">
             {isAdmin ? "Administracao" : isArrendatario ? "Area do Arrendatario" : "Area do Condomino"}
           </SidebarGroupLabel>
