@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, FileText, Download, Upload, BookOpen, FileCheck, File, Search, Eye, User, Calendar, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Upload, BookOpen, FileCheck, File, Search, User, Calendar, ChevronDown, ChevronUp, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +47,7 @@ export function Documentos() {
   const [filter, setFilter] = useState("todos");
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [previewDoc, setPreviewDoc] = useState<any>(null);
+  const [resumeGenerating, setResumeGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role === "admin";
 
@@ -106,11 +106,37 @@ export function Documentos() {
     }
   };
 
+  const generateResume = async () => {
+    if (!content.trim()) {
+      toast({ title: "Escreva o conteudo da ata primeiro.", variant: "destructive" });
+      return;
+    }
+    setResumeGenerating(true);
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "Gera um resumo estruturado desta ata de condominio em portugues europeu. Inclui: pontos principais discutidos, decisoes tomadas, acoes a tomar e votacoes realizadas (se houver). Formato limpo e profissional.\n\nATA:\n" + content }],
+          context: "",
+        }),
+      });
+      const data = await res.json();
+      if (data.content) {
+        setContent(content + "\n\n---RESUMO AUTOMATICO (IA)---\n" + data.content);
+        toast({ title: "Resumo gerado com sucesso!" });
+      }
+    } catch {
+      toast({ title: "Erro ao gerar resumo.", variant: "destructive" });
+    } finally {
+      setResumeGenerating(false);
+    }
+  };
+
   const filtered = (documents || [])
     .filter((d: any) => filter === "todos" || d.category === filter)
     .filter((d: any) => !search || d.title.toLowerCase().includes(search.toLowerCase()) || d.description?.toLowerCase().includes(search.toLowerCase()));
 
-  // Estatisticas
   const stats = CATEGORIES.map(c => ({
     ...c,
     count: (documents || []).filter((d: any) => d.category === c.key).length
@@ -134,7 +160,7 @@ export function Documentos() {
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Publicar Novo Documento</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <div><label className="text-sm font-medium mb-1 block">Titulo</label><Input placeholder="Ex: Regulamento Interno 2025" value={title} onChange={e => setTitle(e.target.value)} /></div>
+                <div><label className="text-sm font-medium mb-1 block">Titulo</label><Input placeholder="Ex: Ata Assembleia Marco 2025" value={title} onChange={e => setTitle(e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium mb-1 block">Categoria</label>
@@ -145,14 +171,14 @@ export function Documentos() {
                   </div>
                   <div><label className="text-sm font-medium mb-1 block">Versao</label><Input placeholder="Ex: 1.0" value={version} onChange={e => setVersion(e.target.value)} /></div>
                 </div>
-                <div><label className="text-sm font-medium mb-1 block">Descricao</label><Input placeholder="Breve descricao do documento..." value={description} onChange={e => setDescription(e.target.value)} /></div>
+                <div><label className="text-sm font-medium mb-1 block">Descricao</label><Input placeholder="Breve descricao..." value={description} onChange={e => setDescription(e.target.value)} /></div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Ficheiro (PDF, DOC)</label>
                   {fileName ? (
                     <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                       <FileCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                       <span className="text-sm text-emerald-700 flex-1 truncate">{fileName}</span>
-                      <button onClick={() => { setFileUrl(null); setFileName(null); }} className="text-muted-foreground hover:text-rose-500 text-lg leading-none">×</button>
+                      <button onClick={() => { setFileUrl(null); setFileName(null); }} className="text-muted-foreground hover:text-rose-500 text-lg leading-none">x</button>
                     </div>
                   ) : (
                     <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="w-full h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors">
@@ -163,8 +189,22 @@ export function Documentos() {
                   <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Conteudo em texto (opcional)</label>
-                  <Textarea placeholder="Conteudo do documento em texto..." value={content} onChange={e => setContent(e.target.value)} rows={6} />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium">Conteudo em texto</label>
+                    {category === "ata" && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={generateResume} disabled={resumeGenerating || !content.trim()}>
+                        {resumeGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        Gerar Resumo IA
+                      </Button>
+                    )}
+                  </div>
+                  <Textarea placeholder={category === "ata" ? "Escreva o conteudo da ata e depois clique em Gerar Resumo IA..." : "Conteudo do documento..."} value={content} onChange={e => setContent(e.target.value)} rows={8} />
+                  {category === "ata" && (
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-emerald-500" />
+                      Escreva o conteudo da ata e clique em "Gerar Resumo IA" para criar um resumo automatico com Groq.
+                    </p>
+                  )}
                 </div>
                 <Button className="w-full" disabled={!title || createDocument.isPending || uploading} onClick={() => createDocument.mutate({ title, description, category, fileUrl, content: content + (version ? "\n\nVersao: " + version : ""), createdBy: user?.id })}>
                   {createDocument.isPending ? "A publicar..." : "Publicar Documento"}
@@ -175,7 +215,6 @@ export function Documentos() {
         )}
       </div>
 
-      {/* Estatisticas */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {stats.map(s => (
           <Card key={s.key} className={"p-4 cursor-pointer border-l-4 " + s.border + (filter === s.key ? " ring-2 ring-primary" : "")} onClick={() => setFilter(filter === s.key ? "todos" : s.key)}>
@@ -190,7 +229,6 @@ export function Documentos() {
         ))}
       </div>
 
-      {/* Pesquisa e filtros */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -206,7 +244,6 @@ export function Documentos() {
         </div>
       </div>
 
-      {/* Lista */}
       <div className="space-y-3">
         {isLoading ? (
           <p className="text-muted-foreground">A carregar...</p>
@@ -219,6 +256,7 @@ export function Documentos() {
           const cat = CATEGORIES.find(c => c.key === doc.category) || CATEGORIES[4];
           const author = users?.find(u => u.id === doc.createdBy);
           const isExpanded = expandedId === doc.id;
+          const hasResume = doc.content?.includes("---RESUMO AUTOMATICO (IA)---");
           return (
             <motion.div key={doc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
               <Card className={"border-l-4 " + cat.border + " hover:shadow-md transition-shadow"}>
@@ -232,6 +270,7 @@ export function Documentos() {
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-bold">{doc.title}</h3>
                           <Badge className={"text-xs " + cat.color}>{cat.label}</Badge>
+                          {hasResume && <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"><Sparkles className="w-3 h-3 mr-1" />Resumo IA</Badge>}
                         </div>
                         {doc.description && <p className="text-sm text-muted-foreground mb-2">{doc.description}</p>}
                         <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
@@ -263,9 +302,22 @@ export function Documentos() {
                   <AnimatePresence>
                     {isExpanded && doc.content && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-border/50">
-                        <div className="bg-secondary/20 rounded-xl p-4 max-h-96 overflow-y-auto">
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content}</p>
-                        </div>
+                        {hasResume ? (
+                          <div className="space-y-3">
+                            <div className="bg-secondary/20 rounded-xl p-4 max-h-48 overflow-y-auto">
+                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Conteudo Original</p>
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content.split("---RESUMO AUTOMATICO (IA)---")[0]}</p>
+                            </div>
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 max-h-48 overflow-y-auto">
+                              <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Sparkles className="w-3 h-3" />Resumo Automatico IA</p>
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content.split("---RESUMO AUTOMATICO (IA)---")[1]}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-secondary/20 rounded-xl p-4 max-h-96 overflow-y-auto">
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content}</p>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
