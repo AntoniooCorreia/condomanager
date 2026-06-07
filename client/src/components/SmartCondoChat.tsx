@@ -95,7 +95,7 @@ REGRAS:
       });
 
       const data = await response.json();
-      const assistantText = data.content || data.message || JSON.stringify(data);
+      const assistantText = data.content || ("ERRO: " + JSON.stringify(data));
 
       setMessages(prev => [...prev, { role: "assistant", content: assistantText, createdAt: new Date().toISOString() }]);
     } catch {
