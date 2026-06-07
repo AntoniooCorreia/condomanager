@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, FileText, Download, Upload, BookOpen, FileCheck, File, Search, User, Calendar, ChevronDown, ChevronUp, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Upload, BookOpen, FileCheck, File, Search, User, Calendar, ChevronDown, ChevronUp, Sparkles, Loader2, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,10 +50,11 @@ export function Documentos() {
   const [resumeGenerating, setResumeGenerating] = useState(false);
   const [visibility, setVisibility] = useState("todos");
   const [visibleUserIds, setVisibleUserIds] = useState<number[]>([]);
-  const condominos = users?.filter(u => u.userType === "condomino") || [];
-  const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role === "admin";
+  const isArrendatario = user?.userType === "arrendatario";
+  const condominos = users?.filter(u => u.userType === "condomino") || [];
+  const arrendatarios = users?.filter(u => u.userType === "arrendatario") || [];
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["/api/documents"],
@@ -89,7 +90,8 @@ export function Documentos() {
 
   const resetForm = () => {
     setTitle(""); setDescription(""); setCategory("geral");
-    setContent(""); setFileUrl(null); setFileName(null); setVersion("1.0"); setVisibility("todos"); setVisibleUserIds([]);
+    setContent(""); setFileUrl(null); setFileName(null); setVersion("1.0");
+    setVisibility("todos"); setVisibleUserIds([]);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -137,12 +139,12 @@ export function Documentos() {
     }
   };
 
-  const isArrendatario = user?.userType === "arrendatario";
+  const toggleVisibleUser = (id: number) => {
+    setVisibleUserIds(prev => prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]);
+  };
 
   const visibleDocs = (documents || []).filter((d: any) => {
-    // Arrendatarios nao veem seguros, atas
     if (isArrendatario && ["seguro", "ata"].includes(d.category)) return false;
-    // Verificar visibilidade
     if (d.visibility === "todos") return true;
     if (d.visibility === "proprietarios" && user?.userType === "condomino") return true;
     if (d.visibility === "arrendatarios" && isArrendatario) return true;
@@ -159,6 +161,15 @@ export function Documentos() {
     ...c,
     count: (documents || []).filter((d: any) => d.category === c.key).length
   }));
+
+  const getVisibilityLabel = (v: string) => {
+    switch (v) {
+      case "proprietarios": return "Proprietarios";
+      case "arrendatarios": return "Arrendatarios";
+      case "especificos": return "Especificos";
+      default: return "Todos";
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -216,14 +227,33 @@ export function Documentos() {
                       </Button>
                     )}
                   </div>
-                  <Textarea placeholder={category === "ata" ? "Escreva o conteudo da ata e depois clique em Gerar Resumo IA..." : "Conteudo do documento..."} value={content} onChange={e => setContent(e.target.value)} rows={8} />
-                  {category === "ata" && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-emerald-500" />
-                      Escreva o conteudo da ata e clique em "Gerar Resumo IA" para criar um resumo automatico com Groq.
-                    </p>
-                  )}
+                  <Textarea placeholder={category === "ata" ? "Escreva o conteudo da ata e depois clique em Gerar Resumo IA..." : "Conteudo do documento..."} value={content} onChange={e => setContent(e.target.value)} rows={6} />
                 </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Visibilidade</label>
+                  <Select value={visibility} onValueChange={setVisibility}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="proprietarios">Apenas Proprietarios</SelectItem>
+                      <SelectItem value="arrendatarios">Apenas Arrendatarios</SelectItem>
+                      <SelectItem value="especificos">Pessoas Especificas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {visibility === "especificos" && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Selecionar Pessoas</label>
+                    <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                      {[...condominos, ...arrendatarios].map(u => (
+                        <label key={u.id} className="flex items-center gap-2 cursor-pointer hover:bg-secondary/30 rounded p-1">
+                          <input type="checkbox" checked={visibleUserIds.includes(u.id)} onChange={() => toggleVisibleUser(u.id)} className="rounded" />
+                          <span className="text-sm">{u.name} - {u.userType === "condomino" ? "Proprietario" : "Arrendatario"} {u.unit ? "Fracao " + u.unit : ""}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <Button className="w-full" disabled={!title || createDocument.isPending || uploading} onClick={() => createDocument.mutate({ title, description, category, fileUrl, content: content + (version ? "\n\nVersao: " + version : ""), createdBy: user?.id, visibility, visibleUserIds })}>
                   {createDocument.isPending ? "A publicar..." : "Publicar Documento"}
                 </Button>
@@ -289,6 +319,7 @@ export function Documentos() {
                           <h3 className="font-bold">{doc.title}</h3>
                           <Badge className={"text-xs " + cat.color}>{cat.label}</Badge>
                           {hasResume && <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"><Sparkles className="w-3 h-3 mr-1" />Resumo IA</Badge>}
+                          {isAdmin && doc.visibility !== "todos" && <Badge className="text-xs bg-secondary"><Eye className="w-3 h-3 mr-1" />{getVisibilityLabel(doc.visibility)}</Badge>}
                         </div>
                         {doc.description && <p className="text-sm text-muted-foreground mb-2">{doc.description}</p>}
                         <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
