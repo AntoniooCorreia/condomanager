@@ -14,6 +14,7 @@ const assembleias = pgTable("assembleias", {
   status: text("status").notNull().default("agendada"),
   createdBy: integer("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  allowedUsers: integer("allowed_users").array(),
 });
 
 const votacoes = pgTable("votacoes", {
@@ -87,8 +88,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   }
   if (req.method === "POST") {
-    const { title, description, date, status, createdBy } = req.body;
-    const [created] = await db.insert(assembleias).values({ title, description, date: new Date(date), status: status || "agendada", createdBy: createdBy ? Number(createdBy) : null }).returning();
+    const { title, description, date, status, createdBy, allowedUsers } = req.body;
+    const [created] = await db.insert(assembleias).values({ title, description, date: new Date(date), status: status || "agendada", createdBy: createdBy ? Number(createdBy) : null, allowedUsers: allowedUsers || [] }).returning();
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {

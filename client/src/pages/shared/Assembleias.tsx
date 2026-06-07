@@ -27,7 +27,9 @@ export function Assembleias() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [allowedUsers, setAllowedUsers] = useState<number[]>([]);
   const isAdmin = user?.role === "admin";
+  const condominos = users?.filter(u => u.userType === "condomino") || [];
 
   const { data: assembleias, isLoading } = useQuery({
     queryKey: ["/api/assembleias"],
@@ -57,7 +59,7 @@ export function Assembleias() {
       queryClient.invalidateQueries({ queryKey: ["/api/assembleias"] });
       toast({ title: "Assembleia criada com sucesso." });
       setOpenNew(false);
-      setTitle(""); setDescription(""); setDate("");
+      setTitle(""); setDescription(""); setDate(""); setAllowedUsers([]);
     },
   });
 
