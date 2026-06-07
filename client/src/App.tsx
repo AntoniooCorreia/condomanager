@@ -23,6 +23,7 @@ import { UserPagamentos } from "./pages/user/UserPagamentos";
 import { UserPerfil } from "./pages/user/UserPerfil";
 import { UserCameras } from "./pages/user/UserCameras";
 import { Avisos } from "./pages/shared/Avisos";
+import { Assembleias } from "./pages/shared/Assembleias";
 import { Documentos } from "./pages/shared/Documentos";
 
 import { UserCobrancas } from "./pages/user/UserCobrancas";
@@ -64,6 +65,8 @@ function Router() {
       <Route path="/user/avisos"><UserRoute component={Avisos} /></Route>
       <Route path="/user/documentos"><UserRoute component={Documentos} /></Route>
       <Route path="/admin/documentos"><AdminRoute component={Documentos} /></Route>
+      <Route path="/admin/assembleias"><AdminRoute component={Assembleias} /></Route>
+      <Route path="/user/assembleias"><UserRoute component={Assembleias} /></Route>
       
       <Route path="/admin/avisos"><AdminRoute component={Avisos} /></Route>
       
