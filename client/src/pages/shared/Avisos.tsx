@@ -251,7 +251,18 @@ export function Avisos() {
                     </Select>
                   </div>
                   <div><label className="text-sm font-medium mb-1 block">Mensagem</label><Textarea placeholder="Descricao do aviso..." value={content} onChange={e => setContent(e.target.value)} rows={4} /></div>
-                  <Button className="w-full" disabled={!title || !content || createAnnouncement.isPending} onClick={() => createAnnouncement.mutate({ title, content, category, createdBy: user?.id })}>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Valido desde</label>
+                      <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Valido ate</label>
+                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                      <p className="text-xs text-muted-foreground mt-1">Vazio = data indefinida</p>
+                    </div>
+                  </div>
+                  <Button className="w-full" disabled={!title || !content || createAnnouncement.isPending} onClick={() => createAnnouncement.mutate({ title, content, category, createdBy: user?.id, startDate: startDate || null, endDate: endDate || null })}>
                     {createAnnouncement.isPending ? "A publicar..." : "Publicar Aviso"}
                   </Button>
                 </div>
