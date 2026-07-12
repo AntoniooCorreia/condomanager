@@ -1,9 +1,9 @@
-import { useSecurityLogs, useUsers, useUpdateSecurityLog, useCreateSecurityLog } from "@/hooks/use-condominium";
+import { useSecurityLogs, useUsers, useUpdateSecurityLog, useCreateSecurityLog, useDeleteSecurityLog } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShieldAlert, AlertTriangle, Plus, CheckCircle2, ImageIcon, X } from "lucide-react";
+import { ShieldAlert, AlertTriangle, Plus, CheckCircle2, ImageIcon, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -29,6 +29,7 @@ export function Seguranca() {
   const { user } = useAuth();
   const createLog = useCreateSecurityLog();
   const updateLog = useUpdateSecurityLog();
+  const deleteLog = useDeleteSecurityLog();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -80,6 +81,14 @@ export function Seguranca() {
         setImagePreview(null);
         form.reset();
       },
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    if (!window.confirm("Tem a certeza que quer apagar esta ocorrencia? Esta acao e irreversivel.")) return;
+    deleteLog.mutate(id, {
+      onSuccess: () => toast({ title: "Sucesso", description: "Ocorrencia apagada." }),
+      onError: () => toast({ title: "Erro", description: "Nao foi possivel apagar.", variant: "destructive" }),
     });
   };
 
@@ -205,15 +214,29 @@ export function Seguranca() {
                   )}
                 </div>
 
-                {isAdmin && isOpen && (
-                  <Button
-                    variant="outline"
-                    className="shrink-0 border-rose-200 text-rose-600 hover:bg-rose-50"
-                    onClick={() => handleResolve(log.id)}
-                    disabled={updateLog.isPending}
-                  >
-                    Marcar Resolvido
-                  </Button>
+                                {isAdmin && (
+                  <div className="flex gap-2 shrink-0">
+                    {isOpen && (
+                      <Button
+                        variant="outline"
+                        className="border-rose-200 text-rose-600 hover:bg-rose-50"
+                        onClick={() => handleResolve(log.id)}
+                        disabled={updateLog.isPending}
+                      >
+                        Marcar Resolvido
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDelete(log.id)}
+                      disabled={deleteLog.isPending}
+                      title="Apagar ocorrencia"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
               </Card>
             </motion.div>

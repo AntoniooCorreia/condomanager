@@ -34,5 +34,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!updated) return res.status(404).json({ message: "Nao encontrado" });
     return res.status(200).json(updated);
   }
+  if (req.method === "DELETE" && id) {
+    const [deleted] = await db.delete(securityLogs).where(eq(securityLogs.id, id)).returning();
+    if (!deleted) return res.status(404).json({ message: "Nao encontrado" });
+    return res.status(200).json({ success: true });
+  }
   return res.status(405).end();
 }

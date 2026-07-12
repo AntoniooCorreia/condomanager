@@ -263,6 +263,18 @@ export function useUpdateSecurityLog() {
   });
 }
 
+export function useDeleteSecurityLog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch("/api/security-logs?id=" + id, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao apagar ocorrencia");
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] }),
+  });
+}
+
 // --- MESSAGES ---
 export function useMessages(userId: number, otherUserId: number) {
   return useQuery({
