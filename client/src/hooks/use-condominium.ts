@@ -42,7 +42,15 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<User> & { id: number }) => {
-      const res = await apiRequest("PUT", buildUrl(api.users.update.path, { id }), data);
+      const res = await fetch("/api/users?id=" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Erro ao atualizar utilizador");
+      }
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.users.list.path] }),

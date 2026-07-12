@@ -55,7 +55,8 @@ export function Condominos() {
     };
     if (editingUser) {
       updateUser.mutate({ id: editingUser.id, ...data }, {
-        onSuccess: () => { toast({ title: "Sucesso", description: "Utilizador atualizado." }); setOpen(false); setEditingUser(null); resetForm(); }
+        onSuccess: () => { toast({ title: "Sucesso", description: "Utilizador atualizado." }); setOpen(false); setEditingUser(null); resetForm(); },
+        onError: (err: any) => toast({ title: "Erro ao atualizar", description: err?.message || "Nao foi possivel atualizar o utilizador.", variant: "destructive" })
       });
     } else {
       createUser.mutate(data, {

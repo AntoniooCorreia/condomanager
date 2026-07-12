@@ -29,9 +29,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {
-    const [updated] = await db.update(users).set(req.body).where(eq(users.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "Nao encontrado" });
-    return res.status(200).json(updated);
+    try {
+      const { username, password, name, unit, role, userType, relatedCondominoId, avatar } = req.body;
+      const fields: any = {};
+      if (username !== undefined) fields.username = username;
+      if (password !== undefined) fields.password = password;
+      if (name !== undefined) fields.name = name;
+      if (unit !== undefined) fields.unit = unit;
+      if (role !== undefined) fields.role = role;
+      if (userType !== undefined) fields.userType = userType;
+      if (avatar !== undefined) fields.avatar = avatar;
+      if (relatedCondominoId !== undefined) fields.relatedCondominoId = relatedCondominoId ? Number(relatedCondominoId) : null;
+      if (Object.keys(fields).length === 0) return res.status(400).json({ message: "Nada para atualizar" });
+      const [updated] = await db.update(users).set(fields).where(eq(users.id, id)).returning();
+      if (!updated) return res.status(404).json({ message: "Utilizador nao encontrado" });
+      return res.status(200).json(updated);
+    } catch (err: any) {
+      return res.status(500).json({ message: err?.message || "Erro ao atualizar utilizador" });
+    }
   }
   if (req.method === "DELETE" && id) {
     try {
