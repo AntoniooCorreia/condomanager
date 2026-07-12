@@ -88,7 +88,12 @@ export function Financeiro() {
   };
 
   const buildRows = () => {
-    const list = tab === "pagos" ? paidPayments : pendingPayments;
+    const list = [...pendingPayments, ...paidPayments].sort((a, b) => {
+      const ua = users?.find(x => x.id === a.userId)?.unit || "";
+      const ub = users?.find(x => x.id === b.userId)?.unit || "";
+      if (ua !== ub) return ua.localeCompare(ub);
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
     return list.map(p => {
       const u = users?.find(x => x.id === p.userId);
       return {
@@ -102,7 +107,7 @@ export function Financeiro() {
     });
   };
 
-  const fileName = () => "financeiro-" + (tab === "pagos" ? "pagos" : "por-pagar") + "-" + format(new Date(), "yyyy-MM-dd");
+  const fileName = () => "financeiro-" + format(new Date(), "yyyy-MM-dd");
 
   const exportCSV = () => {
     const rows = buildRows();
