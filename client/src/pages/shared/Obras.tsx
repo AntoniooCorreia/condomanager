@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HardHat, Plus, Calendar as CalendarIcon, DollarSign, Trash2, Edit } from "lucide-react";
+import { HardHat, Plus, Calendar as CalendarIcon, DollarSign, Trash2, Edit, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -34,6 +34,9 @@ export function Obras() {
 
   const residents = (users?.filter(u => u.userType === "condomino" && u.username !== "admin" && u.username !== "sistema") || [])
     .sort((a, b) => (a.unit || "").localeCompare(b.unit || ""));
+
+  const assignedOf = (w: Work) =>
+    (w.assignedUserIds || []).map(uid => users?.find(u => u.id === uid)).filter(Boolean) as any[];
 
   const filteredWorks = isAdmin
     ? works
@@ -69,14 +72,16 @@ export function Obras() {
   const handleEdit = (e: React.MouseEvent, work: Work) => {
     e.stopPropagation();
     setEditingWork(work);
-    form.reset({
-      title: work.title,
-      description: work.description,
-      status: work.status,
-      cost: work.cost?.toString() || "0",
-      assignedUserIds: work.assignedUserIds || [],
-    });
     setOpen(true);
+    setTimeout(() => {
+      form.reset({
+        title: work.title,
+        description: work.description,
+        status: work.status,
+        cost: work.cost?.toString() || "0",
+        assignedUserIds: (work.assignedUserIds || []).map(Number),
+      });
+    }, 0);
   };
 
   const handleDelete = (e: React.MouseEvent, id: number) => {
@@ -204,6 +209,17 @@ export function Obras() {
                   <div className="flex items-center text-sm text-foreground/80 font-medium">
                     <DollarSign className="w-4 h-4 mr-3 text-muted-foreground" />
                     {work.cost ? `EUR ${parseFloat(work.cost.toString()).toLocaleString()}` : "Orcamento a definir"}
+                  </div>                  <div className="flex items-start text-sm text-foreground/80">
+                    <Users className="w-4 h-4 mr-3 mt-0.5 text-muted-foreground shrink-0" />
+                    <div className="flex flex-wrap gap-1">
+                      {assignedOf(work).length === 0
+                        ? <span className="text-muted-foreground">Sem proprietarios associados</span>
+                        : assignedOf(work).map(u => (
+                            <Badge key={u.id} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              {u.unit} - {u.name}
+                            </Badge>
+                          ))}
+                    </div>
                   </div>
                 </div>
               </div>
