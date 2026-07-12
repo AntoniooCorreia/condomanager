@@ -14,6 +14,11 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSecurityLogSchema, type InsertSecurityLog } from "@/shared/schema";
+import { z } from "zod";
+
+const reportSchema = insertSecurityLogSchema.extend({
+  description: z.string().trim().min(5, "Descreva a ocorrencia (minimo 5 caracteres)."),
+});
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@supabase/supabase-js";
@@ -43,7 +48,7 @@ export function Seguranca() {
     : logs?.filter(l => l.reportedBy === user?.id) || [];
 
   const form = useForm<InsertSecurityLog>({
-    resolver: zodResolver(insertSecurityLogSchema),
+    resolver: zodResolver(reportSchema),
     defaultValues: { reportedBy: user?.id, description: "", status: "open" },
   });
 
@@ -73,7 +78,7 @@ export function Seguranca() {
   };
 
   const onSubmit = (data: InsertSecurityLog) => {
-    createLog.mutate({ ...data, reportedBy: user?.id, imageUrl } as any, {
+    createLog.mutate({ ...data, description: data.description.trim(), reportedBy: user?.id, imageUrl } as any, {
       onSuccess: () => {
         toast({ title: "Sucesso", description: "Ocorrencia reportada." });
         setOpen(false);
@@ -81,6 +86,7 @@ export function Seguranca() {
         setImagePreview(null);
         form.reset();
       },
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel reportar a ocorrencia.", variant: "destructive" }),
     });
   };
 

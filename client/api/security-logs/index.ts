@@ -26,7 +26,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (req.method === "POST") {
     const { reportedBy, description, status, imageUrl } = req.body;
-    const [created] = await db.insert(securityLogs).values({ reportedBy: reportedBy ? Number(reportedBy) : null, description, status: status || "open", imageUrl: imageUrl || null }).returning();
+    const desc = typeof description === "string" ? description.trim() : "";
+    if (desc.length < 5) return res.status(400).json({ message: "A descricao e obrigatoria (minimo 5 caracteres)." });
+    const [created] = await db.insert(securityLogs).values({ reportedBy: reportedBy ? Number(reportedBy) : null, description: desc, status: status || "open", imageUrl: imageUrl || null }).returning();
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {
