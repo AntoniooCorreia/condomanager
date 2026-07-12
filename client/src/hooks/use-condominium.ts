@@ -218,12 +218,23 @@ export function useCreateReservation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", api.reservations.create.path, data);
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Erro ao criar reserva");
+      }
       return res.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: [api.reservations.list.path] });
-      sendSystemMessage(data.userId, "A sua reserva de " + data.area + " foi registada e aguarda aprovacao.");
+      const msg = data.autoApproved
+        ? "A sua reserva de " + data.area + " foi aprovada automaticamente (horario livre)."
+        : "A sua reserva de " + data.area + " aguarda aprovacao (o horario ja tem outra reserva).";
+      sendSystemMessage(data.userId, msg);
     },
   });
 }
@@ -232,7 +243,15 @@ export function useUpdateReservation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PUT", buildUrl(api.reservations.update.path, { id }), { status });
+      const res = await fetch("/api/reservations?id=" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Erro ao atualizar reserva");
+      }
       return res.json();
     },
     onSuccess: (data: any) => {

@@ -60,17 +60,24 @@ export function Reservas() {
 
   const onSubmit = (data: InsertReservation) => {
     createRes.mutate({ ...data, userId: user?.id }, {
-      onSuccess: () => {
-        toast({ title: "Sucesso", description: "Reserva solicitada com sucesso." });
+      onSuccess: (r: any) => {
+        toast({
+          title: r.autoApproved ? "Reserva aprovada" : "Reserva pendente",
+          description: r.autoApproved
+            ? "O horario estava livre, a reserva foi aprovada automaticamente."
+            : "Ja existe uma reserva neste horario. Aguarda aprovacao do administrador.",
+        });
         setOpen(false);
         form.reset();
       },
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel criar a reserva.", variant: "destructive" }),
     });
   };
 
   const handleUpdate = (id: number, status: string) => {
     updateRes({ id, status }, {
-      onSuccess: () => toast({ title: "Reserva atualizada", description: `Estado alterado para ${status}` })
+      onSuccess: () => toast({ title: "Reserva atualizada", description: status === "approved" ? "Reserva aprovada." : "Reserva rejeitada." }),
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel atualizar.", variant: "destructive" }),
     });
   };
 
