@@ -48,6 +48,8 @@ export function Avisos() {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("informativo");
   const [filter, setFilter] = useState("todos");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Convocatoria fields
   const [convData, setConvData] = useState({
@@ -75,7 +77,7 @@ export function Avisos() {
       queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
       toast({ title: "Aviso publicado com sucesso." });
       setOpen(false);
-      setTitle(""); setContent(""); setCategory("informativo");
+      setTitle(""); setContent(""); setCategory("informativo"); setStartDate(""); setEndDate("");
       if (users) {
         users.filter(u => u.username !== "sistema" && u.id !== user?.id).forEach(u => {
           sendSystemMessage(u.id, "Novo aviso no quadro: " + data.title + ". " + data.content);
@@ -294,8 +296,19 @@ export function Avisos() {
                         <Badge className={"text-xs " + cat.color}>{cat.label}</Badge>
                       </div>
                       <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">{aviso.content}</p>
-                      <p className="text-xs text-muted-foreground mt-3">
-                        {format(new Date(aviso.createdAt), "dd 'de' MMMM 'de' yyyy 'as' HH:mm", { locale: ptBR })}
+                      <p className="text-xs text-muted-foreground mt-3 flex flex-wrap items-center gap-2">
+                        <span>Publicado a {format(new Date(aviso.createdAt), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}</span>
+                        {(aviso.startDate || aviso.endDate) && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {aviso.startDate ? format(new Date(aviso.startDate), "dd/MM/yyyy") : "Ja"}
+                            {" ate "}
+                            {aviso.endDate ? format(new Date(aviso.endDate), "dd/MM/yyyy") : "data indefinida"}
+                          </span>
+                        )}
+                        {aviso.endDate && new Date(aviso.endDate) < new Date() && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">Expirado</Badge>
+                        )}
                       </p>
                     </div>
                   </div>
