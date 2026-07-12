@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Clock, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Plus, Trash2, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +32,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPaymentSchema, type InsertPayment } from "@shared/schema";
 import { useState } from "react";
+import * as XLSX from "xlsx";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function Financeiro() {
   const { data: payments, isLoading } = usePayments();
@@ -85,6 +87,49 @@ export function Financeiro() {
     }
   };
 
+  const buildRows = () => {
+    const list = tab === "pagos" ? paidPayments : pendingPayments;
+    return list.map(p => {
+      const u = users?.find(x => x.id === p.userId);
+      return {
+        "Fracao": u?.unit || "N/A",
+        "Nome": u?.name || "N/A",
+        "Descricao": p.description,
+        "Valor (EUR)": Number(p.amount),
+        "Data Limite": format(new Date(p.dueDate), "dd/MM/yyyy"),
+        "Estado": p.status === "paid" ? "Pago" : "Pendente",
+      };
+    });
+  };
+
+  const fileName = () => "financeiro-" + (tab === "pagos" ? "pagos" : "por-pagar") + "-" + format(new Date(), "yyyy-MM-dd");
+
+  const exportCSV = () => {
+    const rows = buildRows();
+    if (rows.length === 0) { toast({ title: "Nada para exportar", variant: "destructive" }); return; }
+    const headers = Object.keys(rows[0]);
+    const esc = (v: any) => '"' + String(v).replace(/"/g, '""') + '"';
+    const csv = [headers.map(esc).join(";"), ...rows.map(r => headers.map(h => esc((r as any)[h])).join(";"))].join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName() + ".csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast({ title: "Exportado", description: rows.length + " registos em CSV." });
+  };
+
+  const exportExcel = () => {
+    const rows = buildRows();
+    if (rows.length === 0) { toast({ title: "Nada para exportar", variant: "destructive" }); return; }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 10 }, { wch: 24 }, { wch: 30 }, { wch: 12 }, { wch: 14 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Financeiro");
+    XLSX.writeFile(wb, fileName() + ".xlsx");
+    toast({ title: "Exportado", description: rows.length + " registos em Excel." });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid': return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"><CheckCircle2 className="w-3 h-3 mr-1"/> Pago</Badge>;
@@ -102,7 +147,21 @@ export function Financeiro() {
           <p className="text-muted-foreground mt-1">Acompanhamento de quotas e pagamentos.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-white">Exportar</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="bg-white">
+                <Download className="w-4 h-4 mr-2" /> Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportCSV}>
+                <FileText className="w-4 h-4 mr-2" /> Exportar CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportExcel}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="shadow-lg shadow-primary/20">Novo Aviso</Button>
