@@ -32,7 +32,8 @@ export function Obras() {
   const [editingWork, setEditingWork] = useState<Work | null>(null);
   const isAdmin = user?.role === "admin";
 
-  const residents = users?.filter(u => u.role === "user") || [];
+  const residents = (users?.filter(u => u.userType === "condomino" && u.username !== "admin" && u.username !== "sistema") || [])
+    .sort((a, b) => (a.unit || "").localeCompare(b.unit || ""));
 
   const filteredWorks = isAdmin
     ? works
@@ -138,8 +139,9 @@ export function Obras() {
                   )} />
                   <FormField control={form.control} name="assignedUserIds" render={() => (
                     <FormItem>
-                      <FormLabel>Proprietarios Envolvidos</FormLabel>
+                      <FormLabel>Proprietarios Envolvidos ({residents.length})</FormLabel>
                       <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                        {residents.length === 0 && <p className="col-span-2 text-sm text-muted-foreground py-2 text-center">Nenhum proprietario registado.</p>}
                         {residents.map((res) => (
                           <FormField key={res.id} control={form.control} name="assignedUserIds" render={({ field }) => (
                             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -153,7 +155,10 @@ export function Obras() {
                                   }}
                                 />
                               </FormControl>
-                              <FormLabel className="text-sm font-normal">{res.unit} - {res.name}</FormLabel>
+                              <FormLabel className="text-sm font-normal flex items-center gap-2">
+                                <span>{res.unit} - {res.name}</span>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-600 border-blue-200">Proprietario</Badge>
+                              </FormLabel>
                             </FormItem>
                           )} />
                         ))}
