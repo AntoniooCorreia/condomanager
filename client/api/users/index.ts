@@ -34,8 +34,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(updated);
   }
   if (req.method === "DELETE" && id) {
-    await db.delete(users).where(eq(users.id, id));
-    return res.status(204).end();
+    try {
+      const [deleted] = await db.delete(users).where(eq(users.id, id)).returning();
+      if (!deleted) return res.status(404).json({ message: "Utilizador nao encontrado" });
+      return res.status(200).json({ success: true });
+    } catch (err: any) {
+      if (err?.code === "23503") {
+        return res.status(409).json({ message: "Nao e possivel apagar: este utilizador tem registos associados (pagamentos, reservas ou ocorrencias). Apague-os primeiro." });
+      }
+      return res.status(500).json({ message: err?.message || "Erro ao apagar utilizador" });
+    }
   }
   return res.status(405).end();
 }

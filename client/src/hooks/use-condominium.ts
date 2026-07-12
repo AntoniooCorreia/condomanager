@@ -53,7 +53,12 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/users/${id}`);
+      const res = await fetch("/api/users?id=" + id, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Erro ao apagar utilizador");
+      }
+      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.users.list.path] }),
   });

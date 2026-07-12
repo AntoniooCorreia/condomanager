@@ -71,9 +71,20 @@ export function Condominos() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Tem a certeza que deseja eliminar este utilizador?")) {
-      deleteUser.mutate(id, { onSuccess: () => toast({ title: "Sucesso", description: "Utilizador eliminado." }) });
-    }
+    if (!confirm("Tem a certeza que deseja eliminar este utilizador?")) return;
+    deleteUser.mutate(id, {
+      onSuccess: () => {
+        toast({ title: "Sucesso", description: "Utilizador eliminado." });
+        if (selectedTenant?.id === id) setSelectedTenant(null);
+      },
+      onError: (err: any) => {
+        toast({
+          title: "Nao foi possivel eliminar",
+          description: err?.message || "Ocorreu um erro ao eliminar o utilizador.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const getTenantStats = (tenantId: number) => {
