@@ -6,7 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
-import { Loader2, Bell } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MainLayoutProps {
@@ -48,12 +48,6 @@ export function MainLayout({ children, requireAdmin = false }: MainLayoutProps) 
               <h2 className="font-display font-semibold text-lg hidden sm:block">
                 Bom dia, {user.name.split(" ")[0]}
               </h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button size="icon" variant="ghost" className="relative hover:bg-primary/5 rounded-full">
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full animate-pulse" />
-              </Button>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">

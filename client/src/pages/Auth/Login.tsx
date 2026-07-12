@@ -69,9 +69,6 @@ export default function Login() {
 
       {/* Login Side */}
       <div className="flex-1 flex items-center justify-center p-8 sm:p-12 relative">
-        <div className="absolute top-8 right-8 text-sm text-muted-foreground hidden lg:block">
-          Precisa de ajuda? <a href="#" className="text-primary font-semibold hover:underline">Contacte o suporte</a>
-        </div>
         
         <Card className="w-full max-w-md p-8 shadow-2xl border-none ring-1 ring-black/5 bg-white/50 backdrop-blur-xl">
           <motion.div
@@ -89,8 +86,7 @@ export default function Login() {
                 <Label htmlFor="username">Utilizador</Label>
                 <Input 
                   id="username" 
-                  placeholder="ex: admin ou joao.silva" 
-                  className="h-12 bg-secondary/50 border-secondary-foreground/10 focus-visible:ring-primary"
+className="h-12 bg-secondary/50 border-secondary-foreground/10 focus-visible:ring-primary"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
