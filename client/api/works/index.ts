@@ -32,9 +32,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {
-    const [updated] = await db.update(works).set(req.body).where(eq(works.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "Nao encontrado" });
-    return res.status(200).json(updated);
+    try {
+      const { title, description, status, startDate, endDate, cost, assignedUserIds } = req.body;
+      const fields: any = {};
+      if (title !== undefined) fields.title = title;
+      if (description !== undefined) fields.description = description;
+      if (status !== undefined) fields.status = status;
+      if (startDate !== undefined) fields.startDate = startDate ? new Date(startDate) : null;
+      if (endDate !== undefined) fields.endDate = endDate ? new Date(endDate) : null;
+      if (cost !== undefined) fields.cost = cost ? String(cost) : null;
+      if (assignedUserIds !== undefined) fields.assignedUserIds = assignedUserIds || [];
+      if (Object.keys(fields).length === 0) return res.status(400).json({ message: "Nada para atualizar" });
+      const [updated] = await db.update(works).set(fields).where(eq(works.id, id)).returning();
+      if (!updated) return res.status(404).json({ message: "Obra nao encontrada" });
+      return res.status(200).json(updated);
+    } catch (err: any) {
+      return res.status(500).json({ message: err?.message || "Erro ao atualizar obra" });
+    }
   }
   if (req.method === "DELETE" && id) {
     await db.delete(works).where(eq(works.id, id));

@@ -52,7 +52,8 @@ export function Obras() {
           setOpen(false);
           setEditingWork(null);
           form.reset();
-        }
+        },
+        onError: (err: any) => toast({ title: "Erro ao atualizar", description: err?.message || "Nao foi possivel atualizar a obra.", variant: "destructive" })
       });
     } else {
       createWork.mutate(data, {

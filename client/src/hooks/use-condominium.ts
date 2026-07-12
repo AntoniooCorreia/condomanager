@@ -86,7 +86,15 @@ export function useUpdateWork() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: any) => {
-      const res = await apiRequest("PUT", buildUrl(api.works.update.path, { id }), data);
+      const res = await fetch("/api/works?id=" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Erro ao atualizar obra");
+      }
       return res.json();
     },
     onSuccess: (data: any) => {
