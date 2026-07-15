@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { usePayments, useReservations, useWorks, useSecurityLogs, useUsers } from "@/hooks/use-condominium";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,11 +15,6 @@ interface Message {
 
 export function SmartCondoChat() {
   const { user } = useAuth();
-  const { data: payments } = usePayments();
-  const { data: reservations } = useReservations();
-  const { data: works } = useWorks();
-  const { data: logs } = useSecurityLogs();
-  const { data: users } = useUsers();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,26 +30,8 @@ export function SmartCondoChat() {
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open]);
 
-  const buildContext = () => {
-    const myPayments = payments?.filter(p => p.userId === user?.id) || [];
-    const myReservations = reservations?.filter(r => r.userId === user?.id) || [];
-    const pendingPayments = myPayments.filter(p => p.status === "pending");
-    const activeWorks = works?.filter(w => w.status === "in_progress") || [];
-    const openLogs = logs?.filter(l => l.status === "open") || [];
-
-    return `
-DADOS DO CONDOMINIO (atualizados em tempo real):
-- Utilizador atual: ${user?.name}, fracao ${user?.unit}, tipo: ${user?.userType}
-- Pagamentos pendentes do utilizador: ${pendingPayments.length} (total: EUR ${pendingPayments.reduce((a, p) => a + parseFloat(p.amount), 0).toFixed(2)})
-- Reservas do utilizador: ${myReservations.length} no total
-- Obras em curso no edificio: ${activeWorks.map(w => w.title).join(", ") || "nenhuma"}
-- Ocorrencias abertas: ${openLogs.length}
-- Total de condominios: ${users?.filter(u => u.userType === "condomino").length || 0}
-    `.trim();
-  };
-
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !user) return;
     const userMsg = input.trim();
     setInput("");
 
@@ -64,42 +40,21 @@ DADOS DO CONDOMINIO (atualizados em tempo real):
     setLoading(true);
 
     try {
-      const systemPrompt = `És o SmartCondo, um assistente especializado em gestão de condomínios portugueses.
-És integrado na plataforma CondoManager e tens acesso aos dados reais do condomínio.
-
-ESPECIALIDADES:
-- Legislação portuguesa de condomínios (Lei 8/2022, Código Civil artigos 1414º-1438º-A, NRAU)
-- Regulamento interno do condomínio
-- Gestão de quotas e pagamentos
-- Reservas de áreas comuns
-- Obras e manutenção
-- Segurança e ocorrências
-- Direitos e obrigações de condóminos e arrendatários
-
-${buildContext()}
-
-REGRAS:
-- Responde sempre em português europeu
-- Sê preciso, útil e profissional
-- Quando citares legislação, indica o artigo correto
-- Se não souberes algo, diz claramente
-- Mantém respostas concisas mas completas`;
-
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          context: buildContext(),
+          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          userId: user.id,
         }),
       });
 
       const data = await response.json();
-      const assistantText = data.content || ("ERRO: " + JSON.stringify(data));
+      const assistantText = data.content || "Ocorreu um erro. Tente novamente.";
 
-      setMessages(prev => [...prev, { role: "assistant", content: assistantText, createdAt: new Date().toISOString() }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: assistantText, createdAt: new Date().toISOString() }]);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Ocorreu um erro de ligacao. Verifique a sua conexao e tente novamente.", createdAt: new Date().toISOString() }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "Ocorreu um erro de ligação. Verifique a sua conexão e tente novamente.", createdAt: new Date().toISOString() }]);
     } finally {
       setLoading(false);
     }
@@ -112,11 +67,12 @@ REGRAS:
   const suggestions = [
     "Tenho pagamentos em atraso?",
     "Quais as regras para reservar a piscina?",
-    "Que obras estao em curso?",
-    "Quais os meus direitos como condominoo?",
+    "Que obras estão em curso?",
+    "Quais os meus direitos como condómino?",
   ];
 
-  if (!user) return null;
+  // Arrendatarios nao tem acesso ao assistente de IA
+  if (!user || user.userType === "arrendatario") return null;
 
   return (
     <>
@@ -177,12 +133,12 @@ REGRAS:
                       <Bot className="w-4 h-4 text-emerald-600" />
                     </div>
                     <div className="bg-secondary/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%] text-sm">
-                      Ola, <strong>{user?.name?.split(" ")[0]}</strong>! Sou o <strong>SmartCondo IA</strong>, especialista em legislacao e gestao de condominios portugueses. Tenho acesso aos dados do seu condominio em tempo real. Como posso ajudar?
+                      Olá, <strong>{user?.name?.split(" ")[0]}</strong>! Sou o <strong>SmartCondo IA</strong>, especialista em legislação e gestão de condomínios portugueses. Tenho acesso aos dados do seu condomínio em tempo real. Como posso ajudar?
                     </div>
                   </div>
                   <div className="pl-11 space-y-2">
                     <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Sugestoes:
+                      <Sparkles className="w-3 h-3" /> Sugestões:
                     </p>
                     {suggestions.map((s, i) => (
                       <button key={i} onClick={() => { setInput(s); inputRef.current?.focus(); }}
