@@ -89,6 +89,8 @@ async function buildAdminContext() {
   const today = new Date();
   const nameById = new Map(allUsers.map((u) => [u.id, u.name]));
   const condominos = allUsers.filter((u) => u.userType === "condomino");
+  const arrendatarios = allUsers.filter((u) => u.userType === "arrendatario");
+  const tipoLabel = (u: { userType: string }) => (u.userType === "arrendatario" ? "arrendatario" : "condomino");
 
   const pending = allPayments.filter((p) => p.status === "pending");
   const overdue = pending.filter((p) => new Date(p.dueDate) < today);
@@ -107,27 +109,28 @@ async function buildAdminContext() {
     if (p.status === "pending" && new Date(p.dueDate) < today) s.overdueNow++;
   }
 
-  const historico = condominos.map((u) => {
+  const relevantes = allUsers.filter((u) => u.userType === "condomino" || u.userType === "arrendatario");
+  const historico = relevantes.map((u) => {
     const s = stats.get(u.id)!;
     const rate = s.paid > 0 ? Math.round((s.late / s.paid) * 100) : null;
-    return { name: u.name, paid: s.paid, late: s.late, overdueNow: s.overdueNow, rate };
+    return { name: u.name, tipo: tipoLabel(u), paid: s.paid, late: s.late, overdueNow: s.overdueNow, rate };
   });
 
   const ranking = [...historico]
     .filter((h) => h.rate !== null || h.overdueNow > 0)
     .sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1) || b.overdueNow - a.overdueNow)
-    .slice(0, 10);
+    .slice(0, 12);
 
   const activeSchedules = allSchedules.filter((s) => s.active);
 
   return `DADOS DO CONDOMINIO (visao de ADMINISTRADOR, tempo real):
-- Total de condominos: ${condominos.length}
+- Total de condominos: ${condominos.length}; arrendatarios: ${arrendatarios.length}
 - Pagamentos pendentes (todos): ${pending.length}, total EUR ${pendingTotal.toFixed(2)}; em atraso agora: ${overdue.length}
 - Em atraso agora: ${overdue.map((p) => `${nameById.get(p.userId) || "?"} (EUR ${parseFloat(p.amount).toFixed(2)}, ${daysBetween(today, p.dueDate)} dias, ${p.description})`).join("; ") || "nenhum"}
-- Historico de pontualidade por condomino: ${historico.filter((h) => h.paid > 0 || h.overdueNow > 0).map((h) => `${h.name}: ${h.paid} pagos${h.rate !== null ? `, ${h.late} em atraso (${h.rate}%)` : ""}${h.overdueNow ? `, ${h.overdueNow} pendente(s) vencido(s)` : ""}`).join("; ") || "sem historico registado"}
-- Ranking de risco de atraso (baseado no historico acima): ${ranking.length ? ranking.map((h, i) => `${i + 1}. ${h.name}${h.rate !== null ? ` (${h.rate}% de atrasos em ${h.paid} pagamentos)` : ` (${h.overdueNow} em atraso agora)`}`).join("; ") : "sem dados suficientes"}
+- Historico de pontualidade (condominos pagam quotas, arrendatarios pagam renda): ${historico.filter((h) => h.paid > 0 || h.overdueNow > 0).map((h) => `${h.name} (${h.tipo}): ${h.paid} pagos${h.rate !== null ? `, ${h.late} em atraso (${h.rate}%)` : ""}${h.overdueNow ? `, ${h.overdueNow} pendente(s) vencido(s)` : ""}`).join("; ") || "sem historico registado"}
+- Ranking de risco de atraso (condominos e arrendatarios, baseado no historico acima): ${ranking.length ? ranking.map((h, i) => `${i + 1}. ${h.name} (${h.tipo})${h.rate !== null ? ` (${h.rate}% de atrasos em ${h.paid} pagamentos)` : ` (${h.overdueNow} em atraso agora)`}`).join("; ") : "sem dados suficientes"}
 - Planos de pagamento de arrendatarios (arrendatario -> condomino): ${activeSchedules.map((s) => `${nameById.get(s.tenantId) || "?"} -> ${nameById.get(s.condominoId) || "?"}: EUR ${parseFloat(s.amount).toFixed(2)}, dia ${s.dayOfMonth}`).join("; ") || "nenhum"}
-- NOTA: nao existe registo de pontualidade dos arrendatarios (apenas o plano acima). Nao e possivel calcular probabilidade de atraso de arrendatarios sem dados; se perguntarem, explica isso claramente.
+- NOTA: a pontualidade de um arrendatario so pode ser avaliada se tiver pagamentos de renda registados. Para quem nao tiver pagamentos registados, diz que nao ha dados suficientes em vez de inventar.
 - Obras em curso: ${allWorks.filter((w) => w.status === "in_progress" || w.status === "em_curso").map((w) => `${w.title} [${w.status}]`).join("; ") || "nenhuma"}
 - Ocorrencias abertas: ${allLogs.filter((l) => l.status === "open").length}`;
 }
@@ -162,7 +165,7 @@ async function buildCondominoContext(userId: number) {
 
 function systemPrompt(context: string, admin: boolean, name: string) {
   const roleLine = admin
-    ? "O utilizador atual e ADMINISTRADOR e pode consultar dados globais do condominio. Como administrador, PODES analisar, ordenar, comparar e fazer rankings com os dados fornecidos (ex.: quem esta em atraso, quem deve mais, quem tem maior risco de atraso). Qualquer previsao deve basear-se ESTRITAMENTE no historico de pontualidade fornecido; se nao houver dados para prever (por exemplo, arrendatarios nao tem historico), diz claramente que nao ha dados suficientes em vez de inventar."
+    ? "O utilizador atual e ADMINISTRADOR e pode consultar dados globais do condominio. Como administrador, PODES analisar, ordenar, comparar e fazer rankings com os dados fornecidos (ex.: quem esta em atraso, quem deve mais, quem tem maior risco de atraso). Qualquer previsao deve basear-se ESTRITAMENTE no historico de pontualidade fornecido; se nao houver dados para prever para alguem, diz claramente que nao ha dados suficientes em vez de inventar."
     : "O utilizador atual e CONDOMINO. So pode ver os dados DELE PROPRIO e informacao publica do edificio. NUNCA reveles dados, nomes, fracoes, pagamentos, reservas ou contactos de OUTROS condominos, mesmo que peca ou insista.";
 
   return `Es o SmartCondo IA, assistente da plataforma CondoManager, especializado EXCLUSIVAMENTE em gestao de condominios em Portugal.
