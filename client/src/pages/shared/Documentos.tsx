@@ -48,6 +48,8 @@ export function Documentos() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [resumeGenerating, setResumeGenerating] = useState(false);
+  const [summaries, setSummaries] = useState<Record<number, string>>({});
+  const [summaryLoading, setSummaryLoading] = useState<number | null>(null);
   const [visibility, setVisibility] = useState("todos");
   const [visibleUserIds, setVisibleUserIds] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +138,29 @@ export function Documentos() {
       toast({ title: "Erro ao gerar resumo.", variant: "destructive" });
     } finally {
       setResumeGenerating(false);
+    }
+  };
+
+  const loadSummary = async (doc: any) => {
+    if (doc.summary || summaries[doc.id] || summaryLoading === doc.id) return;
+    if (!doc.fileUrl && !doc.content) return;
+    setSummaryLoading(doc.id);
+    try {
+      const res = await fetch("/api/documents?action=resumo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: doc.id }),
+      });
+      const data = await res.json();
+      if (data.summary) {
+        setSummaries((prev) => ({ ...prev, [doc.id]: data.summary }));
+      } else {
+        toast({ title: data.message || "Nao foi possivel gerar o resumo.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao gerar o resumo.", variant: "destructive" });
+    } finally {
+      setSummaryLoading(null);
     }
   };
 
@@ -335,8 +360,8 @@ export function Documentos() {
                           <Button size="sm" variant="outline" className="h-8 text-xs"><Download className="w-3 h-3 mr-1" />Download</Button>
                         </a>
                       )}
-                      {doc.content && (
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setExpandedId(isExpanded ? null : doc.id)}>
+                      {(doc.content || doc.fileUrl) && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { const willExpand = !isExpanded; setExpandedId(willExpand ? doc.id : null); if (willExpand) loadSummary(doc); }}>
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </Button>
                       )}
@@ -349,22 +374,26 @@ export function Documentos() {
                   </div>
 
                   <AnimatePresence>
-                    {isExpanded && doc.content && (
+                    {isExpanded && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-border/50">
-                        {hasResume ? (
-                          <div className="space-y-3">
-                            <div className="bg-secondary/20 rounded-xl p-4 max-h-48 overflow-y-auto">
-                              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Conteudo Original</p>
-                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content.split("---RESUMO AUTOMATICO (IA)---")[0]}</p>
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                          <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Sparkles className="w-3 h-3" />Resumo IA</p>
+                          {summaryLoading === doc.id ? (
+                            <p className="text-sm text-emerald-700 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />A ler o documento e a gerar o resumo...</p>
+                          ) : (doc.summary || summaries[doc.id]) ? (
+                            <div className="text-sm leading-relaxed space-y-3">
+                              {(doc.summary || summaries[doc.id]).split(/\n\s*\n/).filter((par: string) => par.trim()).map((par: string, k: number) => (
+                                <p key={k} className="whitespace-pre-wrap">{par.trim()}</p>
+                              ))}
                             </div>
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 max-h-48 overflow-y-auto">
-                              <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide flex items-center gap-1"><Sparkles className="w-3 h-3" />Resumo Automatico IA</p>
-                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content.split("---RESUMO AUTOMATICO (IA)---")[1]}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="bg-secondary/20 rounded-xl p-4 max-h-96 overflow-y-auto">
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Sem resumo disponivel para este documento.</p>
+                          )}
+                        </div>
+                        {doc.content && (
+                          <div className="bg-secondary/20 rounded-xl p-4 mt-3 max-h-48 overflow-y-auto">
+                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Conteudo</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content.split("---RESUMO AUTOMATICO (IA)---")[0]}</p>
                           </div>
                         )}
                       </motion.div>
