@@ -66,11 +66,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (doc.summary) return res.status(200).json({ summary: doc.summary });
 
       let sourceText = "";
-      const original = (doc.content || "").split("---RESUMO AUTOMATICO (IA)---")[0].trim();
-      if (original) {
-        sourceText = original;
-      } else if (doc.fileUrl && /\.pdf(\?|$)/i.test(doc.fileUrl)) {
+      // Prioridade ao ficheiro PDF (o conteudo escrito costuma ser so "Versao: X").
+      if (doc.fileUrl && /\.pdf(\?|$)/i.test(doc.fileUrl)) {
         sourceText = await extractPdfText(doc.fileUrl);
+      }
+      if (!sourceText.trim()) {
+        sourceText = (doc.content || "")
+          .split("---RESUMO AUTOMATICO (IA)---")[0]
+          .replace(/\n*Versao:.*$/i, "")
+          .trim();
       }
 
       if (!sourceText.trim()) {
