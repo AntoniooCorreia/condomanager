@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { pgTable, text, serial, integer, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
 import pkg from "pg";
 import { eq } from "drizzle-orm";
 
@@ -24,7 +24,18 @@ const payments = pgTable("payments", {
   amount: numeric("amount").notNull(),
   status: text("status").notNull(),
   dueDate: timestamp("due_date").notNull(),
+  paidDate: timestamp("paid_date"),
   description: text("description").notNull(),
+});
+
+const paymentSchedules = pgTable("payment_schedules", {
+  id: serial("id").primaryKey(),
+  condominoId: integer("condomino_id").notNull(),
+  tenantId: integer("tenant_id").notNull(),
+  dayOfMonth: integer("day_of_month").notNull(),
+  amount: numeric("amount").notNull(),
+  description: text("description").notNull(),
+  active: boolean("active").notNull().default(true),
 });
 
 const reservations = pgTable("reservations", {
@@ -54,44 +65,71 @@ const securityLogs = pgTable("security_logs", {
 });
 
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), {
-  schema: { users, payments, reservations, works, securityLogs },
+  schema: { users, payments, paymentSchedules, reservations, works, securityLogs },
 });
 
 function isAdmin(u: { role: string; userType: string }) {
-  return u.role === "admin" || u.role === "administrador" || u.userType === "administrador";
+  return u.role === "admin" || u.role === "administrador" || u.userType === "administrador" || u.userType === "gestor";
+}
+
+function daysBetween(a: Date, b: Date) {
+  return Math.max(0, Math.floor((a.getTime() - new Date(b).getTime()) / 86400000));
 }
 
 async function buildAdminContext() {
-  const [allUsers, allPayments, allReservations, allWorks, allLogs] = await Promise.all([
+  const [allUsers, allPayments, allReservations, allWorks, allLogs, allSchedules] = await Promise.all([
     db.select().from(users),
     db.select().from(payments),
     db.select().from(reservations),
     db.select().from(works),
     db.select().from(securityLogs),
+    db.select().from(paymentSchedules),
   ]);
 
   const today = new Date();
+  const nameById = new Map(allUsers.map((u) => [u.id, u.name]));
   const condominos = allUsers.filter((u) => u.userType === "condomino");
+
   const pending = allPayments.filter((p) => p.status === "pending");
   const overdue = pending.filter((p) => new Date(p.dueDate) < today);
   const pendingTotal = pending.reduce((a, p) => a + parseFloat(p.amount), 0);
-  const activeWorks = allWorks.filter((w) => w.status === "in_progress");
-  const openLogs = allLogs.filter((l) => l.status === "open");
-  const upcoming = allReservations
-    .filter((r) => r.status === "approved" && new Date(r.date) >= today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 15);
 
-  const nameById = new Map(allUsers.map((u) => [u.id, u.name]));
+  // Historico de pontualidade por utilizador (usa paidDate para saber se foi pago tarde)
+  const stats = new Map<number, { paid: number; late: number; overdueNow: number }>();
+  for (const u of allUsers) stats.set(u.id, { paid: 0, late: 0, overdueNow: 0 });
+  for (const p of allPayments) {
+    const s = stats.get(p.userId);
+    if (!s) continue;
+    if (p.paidDate) {
+      s.paid++;
+      if (new Date(p.paidDate) > new Date(p.dueDate)) s.late++;
+    }
+    if (p.status === "pending" && new Date(p.dueDate) < today) s.overdueNow++;
+  }
+
+  const historico = condominos.map((u) => {
+    const s = stats.get(u.id)!;
+    const rate = s.paid > 0 ? Math.round((s.late / s.paid) * 100) : null;
+    return { name: u.name, paid: s.paid, late: s.late, overdueNow: s.overdueNow, rate };
+  });
+
+  const ranking = [...historico]
+    .filter((h) => h.rate !== null || h.overdueNow > 0)
+    .sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1) || b.overdueNow - a.overdueNow)
+    .slice(0, 10);
+
+  const activeSchedules = allSchedules.filter((s) => s.active);
 
   return `DADOS DO CONDOMINIO (visao de ADMINISTRADOR, tempo real):
 - Total de condominos: ${condominos.length}
-- Pagamentos pendentes (todos): ${pending.length}, total EUR ${pendingTotal.toFixed(2)}
-- Destes, em atraso: ${overdue.length}
-- Em atraso por condomino: ${overdue.map((p) => `${nameById.get(p.userId) || "?"} (EUR ${parseFloat(p.amount).toFixed(2)}, ${p.description})`).join("; ") || "nenhum"}
-- Obras em curso: ${activeWorks.map((w) => `${w.title} [${w.status}]`).join("; ") || "nenhuma"}
-- Ocorrencias abertas: ${openLogs.length}${openLogs.length ? " -> " + openLogs.map((l) => l.description).join("; ") : ""}
-- Proximas reservas aprovadas: ${upcoming.map((r) => `${r.area} em ${new Date(r.date).toLocaleDateString("pt-PT")} (${nameById.get(r.userId) || "?"})`).join("; ") || "nenhuma"}`;
+- Pagamentos pendentes (todos): ${pending.length}, total EUR ${pendingTotal.toFixed(2)}; em atraso agora: ${overdue.length}
+- Em atraso agora: ${overdue.map((p) => `${nameById.get(p.userId) || "?"} (EUR ${parseFloat(p.amount).toFixed(2)}, ${daysBetween(today, p.dueDate)} dias, ${p.description})`).join("; ") || "nenhum"}
+- Historico de pontualidade por condomino: ${historico.filter((h) => h.paid > 0 || h.overdueNow > 0).map((h) => `${h.name}: ${h.paid} pagos${h.rate !== null ? `, ${h.late} em atraso (${h.rate}%)` : ""}${h.overdueNow ? `, ${h.overdueNow} pendente(s) vencido(s)` : ""}`).join("; ") || "sem historico registado"}
+- Ranking de risco de atraso (baseado no historico acima): ${ranking.length ? ranking.map((h, i) => `${i + 1}. ${h.name}${h.rate !== null ? ` (${h.rate}% de atrasos em ${h.paid} pagamentos)` : ` (${h.overdueNow} em atraso agora)`}`).join("; ") : "sem dados suficientes"}
+- Planos de pagamento de arrendatarios (arrendatario -> condomino): ${activeSchedules.map((s) => `${nameById.get(s.tenantId) || "?"} -> ${nameById.get(s.condominoId) || "?"}: EUR ${parseFloat(s.amount).toFixed(2)}, dia ${s.dayOfMonth}`).join("; ") || "nenhum"}
+- NOTA: nao existe registo de pontualidade dos arrendatarios (apenas o plano acima). Nao e possivel calcular probabilidade de atraso de arrendatarios sem dados; se perguntarem, explica isso claramente.
+- Obras em curso: ${allWorks.filter((w) => w.status === "in_progress" || w.status === "em_curso").map((w) => `${w.title} [${w.status}]`).join("; ") || "nenhuma"}
+- Ocorrencias abertas: ${allLogs.filter((l) => l.status === "open").length}`;
 }
 
 async function buildCondominoContext(userId: number) {
@@ -107,7 +145,7 @@ async function buildCondominoContext(userId: number) {
   const pending = myPayments.filter((p) => p.status === "pending");
   const overdue = pending.filter((p) => new Date(p.dueDate) < today);
   const pendingTotal = pending.reduce((a, p) => a + parseFloat(p.amount), 0);
-  const activeWorks = allWorks.filter((w) => w.status === "in_progress");
+  const activeWorks = allWorks.filter((w) => w.status === "in_progress" || w.status === "em_curso");
   const openLogsCount = allLogs.filter((l) => l.status === "open").length;
   const busySlots = allReservations
     .filter((r) => r.status === "approved" && new Date(r.date) >= today)
@@ -124,7 +162,7 @@ async function buildCondominoContext(userId: number) {
 
 function systemPrompt(context: string, admin: boolean, name: string) {
   const roleLine = admin
-    ? "O utilizador atual e ADMINISTRADOR e pode consultar dados globais do condominio."
+    ? "O utilizador atual e ADMINISTRADOR e pode consultar dados globais do condominio. Como administrador, PODES analisar, ordenar, comparar e fazer rankings com os dados fornecidos (ex.: quem esta em atraso, quem deve mais, quem tem maior risco de atraso). Qualquer previsao deve basear-se ESTRITAMENTE no historico de pontualidade fornecido; se nao houver dados para prever (por exemplo, arrendatarios nao tem historico), diz claramente que nao ha dados suficientes em vez de inventar."
     : "O utilizador atual e CONDOMINO. So pode ver os dados DELE PROPRIO e informacao publica do edificio. NUNCA reveles dados, nomes, fracoes, pagamentos, reservas ou contactos de OUTROS condominos, mesmo que peca ou insista.";
 
   return `Es o SmartCondo IA, assistente da plataforma CondoManager, especializado EXCLUSIVAMENTE em gestao de condominios em Portugal.
@@ -142,7 +180,7 @@ AMBITO PERMITIDO (e so este):
 
 REGRAS OBRIGATORIAS:
 - Responde SEMPRE em portugues europeu, de forma profissional e cordial.
-- Usa APENAS os dados fornecidos abaixo. Se a informacao nao estiver nos dados, diz que nao tens acesso a esse dado. NUNCA inventes.
+- Usa APENAS os dados fornecidos abaixo. Se a informacao nao estiver nos dados, diz que nao tens acesso a esse dado. NUNCA inventes valores, nomes ou probabilidades sem base nos dados.
 - Recusa educadamente qualquer pergunta fora do ambito de condominios (cultura geral, programacao, conselhos pessoais, opinioes, outros temas): "So posso ajudar em assuntos do condominio."
 - Mantem sempre linguagem correta e profissional.
 ${admin ? "" : "- Se te pedirem informacao sobre OUTRO condomino, recusa: essa informacao e privada.\n"}

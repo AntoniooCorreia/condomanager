@@ -12,6 +12,7 @@ const payments = pgTable("payments", {
   amount: numeric("amount").notNull(),
   status: text("status").notNull(),
   dueDate: timestamp("due_date").notNull(),
+  paidDate: timestamp("paid_date"),
   description: text("description").notNull(),
 });
 
@@ -57,11 +58,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (req.method === "POST") {
     const { userId, amount, status, dueDate, description } = req.body;
-    const [created] = await db.insert(payments).values({ userId: Number(userId), amount: String(amount), status: status || "pending", dueDate: new Date(dueDate), description }).returning();
+    const paidDate = (status === "paid") ? new Date() : null;
+    const [created] = await db.insert(payments).values({ userId: Number(userId), amount: String(amount), status: status || "pending", dueDate: new Date(dueDate), paidDate, description }).returning();
     return res.status(201).json(created);
   }
   if (req.method === "PUT" && id) {
-    const [updated] = await db.update(payments).set(req.body).where(eq(payments.id, id)).returning();
+    const body: any = { ...req.body };
+    // Carimba a data de pagamento quando passa a "paid" (para historico de pontualidade);
+    // limpa se voltar a um estado nao pago.
+    if (body.status === "paid" && !body.paidDate) body.paidDate = new Date();
+    if (body.status && body.status !== "paid") body.paidDate = null;
+    const [updated] = await db.update(payments).set(body).where(eq(payments.id, id)).returning();
     if (!updated) return res.status(404).json({ message: "Nao encontrado" });
     return res.status(200).json(updated);
   }
