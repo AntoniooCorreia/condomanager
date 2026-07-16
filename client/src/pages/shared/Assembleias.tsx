@@ -31,13 +31,22 @@ export function Assembleias() {
   const condominos = users?.filter(u => u.userType === "condomino") || [];
 
   const { data: assembleias, isLoading } = useQuery({
-    queryKey: ["/api/assembleias"],
+    queryKey: ["/api/assembleias", user?.id, isAdmin],
+    enabled: !!user,
     queryFn: async () => {
-      const res = await fetch("/api/assembleias");
+      const params = new URLSearchParams({ userId: String(user?.id ?? ""), isAdmin: String(isAdmin) });
+      const res = await fetch("/api/assembleias?" + params.toString());
       if (!res.ok) return [];
       return res.json();
     },
   });
+
+  // So mostra a condominos as assembleias em que estao incluidos (ou que
+  // sejam abertas a todos, quando allowedUsers vem vazio/indefinido).
+  // O admin ve sempre tudo.
+  const visibleAssembleias = isAdmin
+    ? assembleias
+    : assembleias?.filter((a: any) => !a.allowedUsers || a.allowedUsers.length === 0 || a.allowedUsers.includes(user?.id));
 
   const { data: votacoes } = useQuery({
     queryKey: ["/api/assembleias/votacoes", selectedAssembleia?.id],
@@ -158,12 +167,12 @@ export function Assembleias() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-3">
           {isLoading ? <p className="text-muted-foreground text-sm">A carregar...</p> :
-          !assembleias || assembleias.length === 0 ? (
+          !visibleAssembleias || visibleAssembleias.length === 0 ? (
             <Card className="p-8 text-center border-dashed">
               <Users className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">Sem assembleias agendadas.</p>
             </Card>
-          ) : assembleias.map((a: any, i: number) => (
+          ) : visibleAssembleias.map((a: any, i: number) => (
             <motion.div key={a.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
               <Card
                 className={"p-4 cursor-pointer transition-all hover:shadow-md border-2 " + (selectedAssembleia?.id === a.id ? "border-primary" : "border-transparent")}

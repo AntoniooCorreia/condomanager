@@ -85,7 +85,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ASSEMBLEIAS
   if (req.method === "GET") {
     const all = await db.select().from(assembleias);
-    return res.status(200).json(all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    const userId = req.query.userId ? Number(req.query.userId) : null;
+    const isAdmin = req.query.isAdmin === "true";
+    const visible = (!userId || isAdmin)
+      ? all
+      : all.filter(a => !a.allowedUsers || a.allowedUsers.length === 0 || a.allowedUsers.includes(userId));
+    return res.status(200).json(visible.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   }
   if (req.method === "POST") {
     const { title, description, date, status, createdBy, allowedUsers } = req.body;
