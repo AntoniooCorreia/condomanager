@@ -53,6 +53,7 @@ function Router() {
       <Route path="/admin/utilizadores"><AdminRoute component={Condominos} /></Route>
       <Route path="/admin/seguranca"><AdminRoute component={Seguranca} /></Route>
       <Route path="/admin/camaras"><AdminRoute component={UserCameras} /></Route>
+      <Route path="/admin/perfil"><AdminRoute component={UserPerfil} /></Route>
 
       <Route path="/user"><UserRoute component={UserHome} /></Route>
       <Route path="/user/pagamentos"><UserRoute component={UserPagamentos} /></Route>
