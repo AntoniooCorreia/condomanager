@@ -296,7 +296,7 @@ export function useUpdateSecurityLog() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PUT", buildUrl(api.securityLogs.update.path, { id }), { status });
+      const res = await apiRequest("PUT", `${api.securityLogs.update.path}?id=${id}`, { status });
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.securityLogs.list.path] }),

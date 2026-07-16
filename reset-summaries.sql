@@ -1,0 +1,1 @@
+UPDATE documents SET summary = NULL WHERE summary IS NOT NULL;

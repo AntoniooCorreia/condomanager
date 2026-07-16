@@ -136,7 +136,7 @@ export const api = {
     },
     update: {
       method: 'PUT' as const,
-      path: '/api/security-logs/:id' as const,
+      path: '/api/security-logs' as const,
       input: insertSecurityLogSchema.partial(),
       responses: { 200: z.custom<typeof securityLogs.$inferSelect>(), 404: errorSchemas.notFound }
     }
