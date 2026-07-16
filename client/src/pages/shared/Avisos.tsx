@@ -254,11 +254,11 @@ export function Avisos() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm font-medium mb-1 block">Valido desde</label>
-                      <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                      <Input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">Valido ate</label>
-                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                      <Input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
                       <p className="text-xs text-muted-foreground mt-1">Vazio = data indefinida</p>
                     </div>
                   </div>
@@ -312,9 +312,9 @@ export function Avisos() {
                         {(aviso.startDate || aviso.endDate) && (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {aviso.startDate ? format(new Date(aviso.startDate), "dd/MM/yyyy") : "Ja"}
+                            {aviso.startDate ? format(new Date(aviso.startDate), "dd/MM/yyyy HH:mm") : "Ja"}
                             {" ate "}
-                            {aviso.endDate ? format(new Date(aviso.endDate), "dd/MM/yyyy") : "data indefinida"}
+                            {aviso.endDate ? format(new Date(aviso.endDate), "dd/MM/yyyy HH:mm") : "data indefinida"}
                           </span>
                         )}
                         {aviso.endDate && new Date(aviso.endDate) < new Date() && (
