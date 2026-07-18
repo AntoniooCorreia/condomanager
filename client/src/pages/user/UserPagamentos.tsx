@@ -1,9 +1,9 @@
-import { usePayments, useUpdatePayment, useUsers, useCreatePayment, usePaymentSchedules } from "@/hooks/use-condominium";
+import { usePayments, useUsers, useCreatePayment, usePaymentSchedules, useSubmitPaymentProof } from "@/hooks/use-condominium";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, CreditCard, CheckCircle2, Clock, AlertCircle, Plus, Users, RepeatIcon, Flame } from "lucide-react";
+import { Download, CreditCard, CheckCircle2, Clock, AlertCircle, Plus, Users, RepeatIcon, Flame, Upload, FileCheck2, XCircle, ExternalLink } from "lucide-react";
 import { format, addMonths, setDate, isBefore } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { useToast } from "@/hooks/use-toast";
@@ -18,19 +18,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPaymentSchema, type InsertPayment } from "@/shared/schema";
-import { useState } from "react";
+import { insertPaymentSchema, type InsertPayment, type Payment } from "@/shared/schema";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+const PAYMENT_METHODS = [
+  { key: "mbway", label: "MBWay" },
+  { key: "transferencia", label: "Transferencia Bancaria (NIB)" },
+  { key: "dinheiro", label: "Dinheiro" },
+  { key: "cheque", label: "Cheque" },
+  { key: "outro", label: "Outro" },
+];
 
 export function UserPagamentos() {
   const { user } = useAuth();
   const { data: payments } = usePayments();
   const { data: users } = useUsers();
   const { data: schedules } = usePaymentSchedules();
-  const { mutate: updatePayment, isPending } = useUpdatePayment();
   const createPayment = useCreatePayment();
+  const submitProof = useSubmitPaymentProof();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [payDialogPayment, setPayDialogPayment] = useState<Payment | null>(null);
+  const [proofMethod, setProofMethod] = useState<string>("");
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const [proofFileName, setProofFileName] = useState<string | null>(null);
+  const [proofUploading, setProofUploading] = useState(false);
+  const proofInputRef = useRef<HTMLInputElement>(null);
 
   const isProprietário = user?.userType === "Proprietário" || user?.userType === "administrador";
   const isArrendatário = user?.userType === "Arrendatário";
@@ -39,9 +59,11 @@ export function UserPagamentos() {
   const myTenants = users?.filter(u => u.relatedProprietárioId === user?.id) || [];
   const tenantPayments = (tenantId: number) => payments?.filter(p => p.userId === tenantId) || [];
 
-  // Dívidas: pagamentos pendentes do arrendatário separados por em atraso / a vencer
-  const overduePayments = myPayments.filter(p => p.status === "pending" && isBefore(new Date(p.dueDate), new Date()));
-  const upcomingPayments = myPayments.filter(p => p.status === "pending" && !isBefore(new Date(p.dueDate), new Date()));
+  // Dívidas: pagamentos pendentes ou rejeitados (têm de ser pagos/reenviados) separados por em atraso / a vencer
+  const actionablePayments = myPayments.filter(p => p.status === "pending" || p.status === "rejeitado");
+  const overduePayments = actionablePayments.filter(p => p.status === "pending" && isBefore(new Date(p.dueDate), new Date()));
+  const upcomingPayments = actionablePayments.filter(p => !(p.status === "pending" && isBefore(new Date(p.dueDate), new Date())));
+  const awaitingApprovalPayments = myPayments.filter(p => p.status === "aguarda_aprovacao");
 
   // Agendamentos mensais que afetam este arrendatário
   const mySchedules = schedules?.filter(s => s.tenantId === user?.id && s.active) || [];
@@ -75,17 +97,55 @@ export function UserPagamentos() {
     });
   };
 
-  const handlePay = (id: number) => {
-    updatePayment({ id, status: "paid" }, {
+  const openPayDialog = (payment: Payment) => {
+    setPayDialogPayment(payment);
+    setProofMethod("");
+    setProofUrl(null);
+    setProofFileName(null);
+  };
+
+  const handleProofFileUpload = async (file: File) => {
+    setProofUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const name = "comprovativo-" + Date.now() + "." + ext;
+      const { error } = await supabase.storage.from("comprovativos").upload(name, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("comprovativos").getPublicUrl(name);
+      setProofUrl(urlData.publicUrl);
+      setProofFileName(file.name);
+      toast({ title: "Comprovativo carregado com sucesso." });
+    } catch {
+      toast({ title: "Erro ao carregar o comprovativo.", variant: "destructive" });
+    } finally {
+      setProofUploading(false);
+    }
+  };
+
+  const handleSubmitProof = () => {
+    if (!payDialogPayment) return;
+    if (!proofMethod) {
+      toast({ title: "Selecione o metodo de pagamento.", variant: "destructive" });
+      return;
+    }
+    if (!proofUrl) {
+      toast({ title: "Anexe o comprovativo de pagamento.", variant: "destructive" });
+      return;
+    }
+    submitProof.mutate({ id: payDialogPayment.id, paymentMethod: proofMethod, proofUrl }, {
       onSuccess: () => {
-        toast({ title: "Sucesso", description: "Pagamento registado com sucesso." });
+        toast({ title: "Comprovativo enviado", description: "Aguarda aprovacao manual." });
+        setPayDialogPayment(null);
       },
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel enviar o comprovativo.", variant: "destructive" }),
     });
   };
 
   const getStatusBadge = (status: string, dueDate: string | Date) => {
     const isOverdue = status === "pending" && isBefore(new Date(dueDate), new Date());
     if (status === "paid") return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200"><CheckCircle2 className="w-3 h-3 mr-1"/>Pago</Badge>;
+    if (status === "aguarda_aprovacao") return <Badge className="bg-blue-50 text-blue-600 border-blue-200"><Clock className="w-3 h-3 mr-1"/>Aguarda Aprovacao</Badge>;
+    if (status === "rejeitado") return <Badge className="bg-rose-50 text-rose-600 border-rose-200"><XCircle className="w-3 h-3 mr-1"/>Comprovativo Rejeitado</Badge>;
     if (isOverdue) return <Badge className="bg-rose-50 text-rose-600 border-rose-200"><AlertCircle className="w-3 h-3 mr-1"/>Em Atraso</Badge>;
     return <Badge className="bg-amber-50 text-amber-600 border-amber-200"><Clock className="w-3 h-3 mr-1"/>Pendente</Badge>;
   };
@@ -146,6 +206,9 @@ export function UserPagamentos() {
                               <p className="text-sm text-rose-600 font-medium">
                                 Venceu a {format(new Date(p.dueDate), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                               </p>
+                              {p.status === "rejeitado" && p.rejectionReason && (
+                                <p className="text-xs text-rose-700 mt-1 flex items-center gap-1"><XCircle className="w-3 h-3" />Rejeitado: {p.rejectionReason}</p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -153,10 +216,9 @@ export function UserPagamentos() {
                             <Button
                               size="sm"
                               className="bg-rose-600 hover:bg-rose-700"
-                              onClick={() => handlePay(p.id)}
-                              disabled={isPending}
+                              onClick={() => openPayDialog(p)}
                             >
-                              Pagar Agora
+                              {p.status === "rejeitado" ? "Reenviar Comprovativo" : "Pagar Agora"}
                             </Button>
                           </div>
                         </Card>
@@ -190,6 +252,9 @@ export function UserPagamentos() {
                               <p className="text-sm text-muted-foreground">
                                 Vence a {format(new Date(p.dueDate), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                               </p>
+                              {p.status === "rejeitado" && p.rejectionReason && (
+                                <p className="text-xs text-rose-600 mt-1 flex items-center gap-1"><XCircle className="w-3 h-3" />Rejeitado: {p.rejectionReason}</p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -197,10 +262,9 @@ export function UserPagamentos() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handlePay(p.id)}
-                              disabled={isPending}
+                              onClick={() => openPayDialog(p)}
                             >
-                              Pagar
+                              {p.status === "rejeitado" ? "Reenviar" : "Pagar"}
                             </Button>
                           </div>
                         </Card>
@@ -208,6 +272,44 @@ export function UserPagamentos() {
                     ))}
                 </div>
               </div>
+            )}
+
+            {/* Aguarda aprovação */}
+            {awaitingApprovalPayments.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-blue-700">Aguarda Aprovação ({awaitingApprovalPayments.length})</h3>
+                </div>
+                <div className="space-y-3">
+                  {awaitingApprovalPayments.map(p => (
+                    <Card key={p.id} className="p-4 border-blue-200 bg-blue-50/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="font-bold">{p.description}</p>
+                        <p className="text-sm text-muted-foreground">Comprovativo enviado, a aguardar aprovação manual.</p>
+                      </div>
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <p className="font-bold text-xl">€{p.amount}</p>
+                        {p.proofUrl && (
+                          <a href={p.proofUrl} target="_blank" rel="noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
+                            <ExternalLink className="w-3.5 h-3.5" /> Ver comprovativo
+                          </a>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {overduePayments.length === 0 && upcomingPayments.length === 0 && scheduledItems.length === 0 && awaitingApprovalPayments.length === 0 && (
+              <Card className="p-10 text-center border-dashed">
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                <p className="font-bold text-lg">Sem dívidas!</p>
+                <p className="text-muted-foreground text-sm mt-1">Está em dia com todos os pagamentos.</p>
+              </Card>
             )}
 
             {/* Agendamentos futuros (previsão) */}
@@ -242,14 +344,6 @@ export function UserPagamentos() {
                 </div>
               </div>
             )}
-
-            {overduePayments.length === 0 && upcomingPayments.length === 0 && scheduledItems.length === 0 && (
-              <Card className="p-10 text-center border-dashed">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                <p className="font-bold text-lg">Sem dívidas!</p>
-                <p className="text-muted-foreground text-sm mt-1">Está em dia com todos os pagamentos.</p>
-              </Card>
-            )}
           </TabsContent>
         )}
 
@@ -263,33 +357,56 @@ export function UserPagamentos() {
             </Card>
           ) : (
             <>
-              {myPayments.filter(p => p.status === "pending").length > 0 && (
+              {myPayments.filter(p => p.status === "pending" || p.status === "rejeitado").length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  {myPayments.filter(p => p.status === "pending").map(p => {
-                    const isOverdue = isBefore(new Date(p.dueDate), new Date());
+                  {myPayments.filter(p => p.status === "pending" || p.status === "rejeitado").map(p => {
+                    const isOverdue = p.status === "pending" && isBefore(new Date(p.dueDate), new Date());
+                    const isRejected = p.status === "rejeitado";
                     return (
                       <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <Card className={`p-6 relative overflow-hidden shadow-sm border-2 ${isOverdue ? "border-rose-200 bg-rose-50/30" : "border-amber-200 bg-amber-50/30"}`}>
+                        <Card className={`p-6 relative overflow-hidden shadow-sm border-2 ${isOverdue || isRejected ? "border-rose-200 bg-rose-50/30" : "border-amber-200 bg-amber-50/30"}`}>
                           <div className="absolute top-0 right-0 p-4 opacity-10"><CreditCard className="w-16 h-16" /></div>
-                          <Badge variant="outline" className={`mb-4 inline-flex items-center gap-1 ${isOverdue ? "bg-rose-100 text-rose-700 border-rose-200" : "bg-amber-100 text-amber-800 border-amber-200"}`}>
-                            {isOverdue ? <AlertCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                            {isOverdue ? "Em Atraso" : "A Pagamento"}
+                          <Badge variant="outline" className={`mb-4 inline-flex items-center gap-1 ${isOverdue || isRejected ? "bg-rose-100 text-rose-700 border-rose-200" : "bg-amber-100 text-amber-800 border-amber-200"}`}>
+                            {isRejected ? <XCircle className="w-3 h-3" /> : isOverdue ? <AlertCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                            {isRejected ? "Rejeitado" : isOverdue ? "Em Atraso" : "A Pagamento"}
                           </Badge>
                           <h3 className="text-2xl font-bold mb-1">€{p.amount}</h3>
                           <p className="font-medium text-foreground/80 mb-1">{p.description}</p>
-                          <p className="text-sm text-muted-foreground mb-6">Vence: {format(new Date(p.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}</p>
+                          <p className="text-sm text-muted-foreground mb-2">Vence: {format(new Date(p.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}</p>
+                          {isRejected && p.rejectionReason && (
+                            <p className="text-xs text-rose-700 mb-4">Motivo: {p.rejectionReason}</p>
+                          )}
                           <div className="space-y-2 mb-6 bg-white/70 p-3 rounded-lg border border-border/50 text-sm">
                             <div className="flex justify-between"><span className="text-muted-foreground">Entidade:</span><span className="font-mono font-bold">12345</span></div>
                             <div className="flex justify-between"><span className="text-muted-foreground">Referência:</span><span className="font-mono font-bold">123 456 789</span></div>
                             <div className="flex justify-between"><span className="text-muted-foreground">Valor:</span><span className="font-mono font-bold">€{p.amount}</span></div>
                           </div>
-                          <Button className={`w-full ${isOverdue ? "bg-rose-600 hover:bg-rose-700" : "bg-amber-600 hover:bg-amber-700"}`} onClick={() => handlePay(p.id)} disabled={isPending}>
-                            {isPending ? "A processar..." : "Pagar com MBWay"}
+                          <Button className={`w-full ${isOverdue || isRejected ? "bg-rose-600 hover:bg-rose-700" : "bg-amber-600 hover:bg-amber-700"}`} onClick={() => openPayDialog(p)}>
+                            {isRejected ? "Reenviar Comprovativo" : "Enviar Comprovativo"}
                           </Button>
                         </Card>
                       </motion.div>
                     );
                   })}
+                </div>
+              )}
+              {myPayments.filter(p => p.status === "aguarda_aprovacao").length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {myPayments.filter(p => p.status === "aguarda_aprovacao").map(p => (
+                    <Card key={p.id} className="p-6 border-2 border-blue-200 bg-blue-50/30">
+                      <Badge variant="outline" className="mb-4 inline-flex items-center gap-1 bg-blue-100 text-blue-700 border-blue-200">
+                        <Clock className="w-3 h-3" /> Aguarda Aprovação
+                      </Badge>
+                      <h3 className="text-2xl font-bold mb-1">€{p.amount}</h3>
+                      <p className="font-medium text-foreground/80 mb-1">{p.description}</p>
+                      <p className="text-sm text-muted-foreground mb-4">Comprovativo enviado, a aguardar aprovação manual.</p>
+                      {p.proofUrl && (
+                        <a href={p.proofUrl} target="_blank" rel="noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
+                          <ExternalLink className="w-3.5 h-3.5" /> Ver comprovativo enviado
+                        </a>
+                      )}
+                    </Card>
+                  ))}
                 </div>
               )}
               {myPayments.filter(p => p.status === "paid").length > 0 && (
@@ -405,6 +522,63 @@ export function UserPagamentos() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* --- Dialog: enviar comprovativo de pagamento --- */}
+      <Dialog open={!!payDialogPayment} onOpenChange={(o) => !o && setPayDialogPayment(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Enviar Comprovativo de Pagamento</DialogTitle></DialogHeader>
+          {payDialogPayment && (
+            <div className="space-y-4 pt-2">
+              <div className="bg-secondary/40 p-3 rounded-lg text-sm">
+                <p className="font-bold">{payDialogPayment.description}</p>
+                <p className="text-muted-foreground">Valor: <span className="font-bold text-foreground">€{payDialogPayment.amount}</span></p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Método de Pagamento</label>
+                <Select value={proofMethod} onValueChange={setProofMethod}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o método" /></SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {proofMethod === "mbway" && (
+                <div className="bg-white/70 p-3 rounded-lg border border-border/50 text-sm space-y-1">
+                  <p className="text-muted-foreground">Envie o valor por MBWay para o número:</p>
+                  <p className="font-mono font-bold">912 345 678</p>
+                </div>
+              )}
+              {proofMethod === "transferencia" && (
+                <div className="bg-white/70 p-3 rounded-lg border border-border/50 text-sm space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">IBAN:</span><span className="font-mono font-bold">PT50 0000 0000 0000 0000 0000 0</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">NIB:</span><span className="font-mono font-bold">0000 0000 0000 0000 0000 0</span></div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Comprovativo de Pagamento</label>
+                <input
+                  ref={proofInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleProofFileUpload(e.target.files[0])}
+                />
+                <Button type="button" variant="outline" className="w-full" onClick={() => proofInputRef.current?.click()} disabled={proofUploading}>
+                  {proofUploading ? "A carregar..." : proofFileName ? <><FileCheck2 className="w-4 h-4 mr-2 text-emerald-600" />{proofFileName}</> : <><Upload className="w-4 h-4 mr-2" />Anexar Ficheiro (PDF ou imagem)</>}
+                </Button>
+              </div>
+
+              <Button className="w-full" onClick={handleSubmitProof} disabled={submitProof.isPending || proofUploading || !proofUrl || !proofMethod}>
+                {submitProof.isPending ? "A enviar..." : "Enviar Comprovativo"}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">O pagamento só é confirmado depois de aprovação manual.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

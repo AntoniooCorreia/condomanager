@@ -1,4 +1,5 @@
-import { usePayments, useUsers, useUpdatePayment, useCreatePayment, useDeletePayment } from "@/hooks/use-condominium";
+import { usePayments, useUsers, useCreatePayment, useDeletePayment, useApprovePayment, useRejectPayment } from "@/hooks/use-condominium";
+import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { Card } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Clock, Plus, Trash2, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Plus, Trash2, Download, FileSpreadsheet, FileText, XCircle, ExternalLink, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,24 +29,39 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPaymentSchema, type InsertPayment } from "@shared/schema";
+import { insertPaymentSchema, type InsertPayment, type Payment } from "@shared/schema";
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  mbway: "MBWay",
+  transferencia: "Transferencia Bancaria (NIB)",
+  dinheiro: "Dinheiro",
+  cheque: "Cheque",
+  outro: "Outro",
+};
+
 export function Financeiro() {
+  const { user } = useAuth();
   const { data: payments, isLoading } = usePayments();
   const { data: users } = useUsers();
-  const { mutate: updatePayment, isPending } = useUpdatePayment();
   const deletePayment = useDeletePayment();
   const createPayment = useCreatePayment();
+  const approvePayment = useApprovePayment();
+  const rejectPayment = useRejectPayment();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("pagar");
+  const [tab, setTab] = useState("aprovar");
+  const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const pendingPayments = payments?.filter(p => p.status === 'pending') || [];
+  const awaitingPayments = payments?.filter(p => p.status === 'aguarda_aprovacao') || [];
+  const rejectedPayments = payments?.filter(p => p.status === 'rejeitado') || [];
   const paidPayments = payments?.filter(p => p.status === 'paid') || [];
 
   const form = useForm<InsertPayment>({
@@ -69,11 +85,22 @@ export function Financeiro() {
     });
   };
 
-  const handleMarkPaid = (id: number) => {
-    updatePayment({ id, status: 'paid' }, {
+  const handleApprove = (id: number) => {
+    approvePayment.mutate({ id, approvedBy: user?.id }, {
+      onSuccess: () => toast({ title: "Sucesso", description: "Pagamento aprovado." }),
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel aprovar.", variant: "destructive" }),
+    });
+  };
+
+  const handleReject = () => {
+    if (!rejectingPayment) return;
+    rejectPayment.mutate({ id: rejectingPayment.id, reason: rejectReason }, {
       onSuccess: () => {
-        toast({ title: "Sucesso", description: "Pagamento marcado como pago." });
-      }
+        toast({ title: "Comprovativo rejeitado" });
+        setRejectingPayment(null);
+        setRejectReason("");
+      },
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel rejeitar.", variant: "destructive" }),
     });
   };
 
@@ -88,12 +115,13 @@ export function Financeiro() {
   };
 
   const buildRows = () => {
-    const list = [...pendingPayments, ...paidPayments].sort((a, b) => {
+    const list = [...awaitingPayments, ...pendingPayments, ...rejectedPayments, ...paidPayments].sort((a, b) => {
       const ua = users?.find(x => x.id === a.userId)?.unit || "";
       const ub = users?.find(x => x.id === b.userId)?.unit || "";
       if (ua !== ub) return ua.localeCompare(ub);
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
+    const statusLabel: Record<string, string> = { paid: "Pago", pending: "Pendente", aguarda_aprovacao: "Aguarda Aprovacao", rejeitado: "Rejeitado" };
     return list.map(p => {
       const u = users?.find(x => x.id === p.userId);
       return {
@@ -102,7 +130,7 @@ export function Financeiro() {
         "Descricao": p.description,
         "Valor (EUR)": Number(p.amount),
         "Data Limite": format(new Date(p.dueDate), "dd/MM/yyyy"),
-        "Estado": p.status === "paid" ? "Pago" : "Pendente",
+        "Estado": statusLabel[p.status] || p.status,
       };
     });
   };
@@ -138,6 +166,8 @@ export function Financeiro() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid': return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"><CheckCircle2 className="w-3 h-3 mr-1"/> Pago</Badge>;
+      case 'aguarda_aprovacao': return <Badge className="bg-blue-50 text-blue-600 border-blue-200"><Clock className="w-3 h-3 mr-1"/> Aguarda Aprovação</Badge>;
+      case 'rejeitado': return <Badge variant="destructive" className="bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100"><XCircle className="w-3 h-3 mr-1"/> Rejeitado</Badge>;
       case 'pending': return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200"><Clock className="w-3 h-3 mr-1"/> Pendente</Badge>;
       case 'overdue': return <Badge variant="destructive" className="bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100"><AlertCircle className="w-3 h-3 mr-1"/> Em Atraso</Badge>;
       default: return <Badge>{status}</Badge>;
@@ -252,13 +282,78 @@ export function Financeiro() {
         <Card className="border-border/50 shadow-sm">
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+              <TabsTrigger value="aprovar" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                Por Aprovar ({awaitingPayments.length})
+              </TabsTrigger>
               <TabsTrigger value="pagar" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 Por Pagar ({pendingPayments.length})
+              </TabsTrigger>
+              <TabsTrigger value="rejeitados" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                Rejeitados ({rejectedPayments.length})
               </TabsTrigger>
               <TabsTrigger value="pagos" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 Pagos ({paidPayments.length})
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="aprovar" className="mt-0">
+              <Table>
+                <TableHeader className="bg-secondary/50">
+                  <TableRow className="border-border/50">
+                    <TableHead>Fração</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Método</TableHead>
+                    <TableHead>Comprovativo</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-10">A carregar...</TableCell></TableRow>
+                  ) : awaitingPayments.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Sem comprovativos por aprovar.</TableCell></TableRow>
+                  ) : awaitingPayments.map((payment) => {
+                    const u = users?.find(x => x.id === payment.userId);
+                    return (
+                      <TableRow key={payment.id} className="border-border/50 hover:bg-secondary/20 bg-blue-50/20">
+                        <TableCell className="font-medium">{u?.unit || 'N/A'} <span className="text-muted-foreground font-normal">· {u?.name}</span></TableCell>
+                        <TableCell>{payment.description}</TableCell>
+                        <TableCell>{payment.paymentMethod ? PAYMENT_METHOD_LABELS[payment.paymentMethod] || payment.paymentMethod : "-"}</TableCell>
+                        <TableCell>
+                          {payment.proofUrl ? (
+                            <a href={payment.proofUrl} target="_blank" rel="noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
+                              <ExternalLink className="w-3.5 h-3.5" /> Ver
+                            </a>
+                          ) : "-"}
+                        </TableCell>
+                        <TableCell className="font-bold">€{payment.amount}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => handleApprove(payment.id)}
+                              disabled={approvePayment.isPending}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aprovar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-rose-600 border-rose-200 hover:bg-rose-50"
+                              onClick={() => { setRejectingPayment(payment); setRejectReason(""); }}
+                            >
+                              <XCircle className="w-3.5 h-3.5 mr-1" /> Rejeitar
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TabsContent>
 
             <TabsContent value="pagar" className="mt-0">
               <Table>
@@ -291,15 +386,6 @@ export function Financeiro() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="text-primary hover:bg-primary/10 hover:text-primary"
-                              onClick={() => handleMarkPaid(payment.id)}
-                              disabled={isPending}
-                            >
-                              Marcar Pago
-                            </Button>
-                            <Button 
                               size="icon" 
                               variant="ghost" 
                               className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
@@ -309,6 +395,48 @@ export function Financeiro() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="rejeitados" className="mt-0">
+              <Table>
+                <TableHeader className="bg-secondary/50">
+                  <TableRow className="border-border/50">
+                    <TableHead>Fração</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Motivo</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-10">A carregar...</TableCell></TableRow>
+                  ) : rejectedPayments.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Sem comprovativos rejeitados.</TableCell></TableRow>
+                  ) : rejectedPayments.map((payment) => {
+                    const u = users?.find(x => x.id === payment.userId);
+                    return (
+                      <TableRow key={payment.id} className="border-border/50 hover:bg-secondary/20">
+                        <TableCell className="font-medium">{u?.unit || 'N/A'} <span className="text-muted-foreground font-normal">· {u?.name}</span></TableCell>
+                        <TableCell>{payment.description}</TableCell>
+                        <TableCell className="text-muted-foreground">{payment.rejectionReason || "-"}</TableCell>
+                        <TableCell className="font-bold">€{payment.amount}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                            onClick={() => handleDelete(payment.id)}
+                            disabled={deletePayment.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -365,6 +493,22 @@ export function Financeiro() {
           </Tabs>
         </Card>
       </motion.div>
+
+      <Dialog open={!!rejectingPayment} onOpenChange={(o) => !o && setRejectingPayment(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-rose-600"><XCircle className="w-5 h-5" /> Rejeitar Comprovativo</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-2">Pagamento: <strong>{rejectingPayment?.description}</strong></p>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Motivo (opcional)</label>
+              <Textarea placeholder="Ex: Comprovativo ilegivel, valor nao corresponde, etc." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+            </div>
+            <Button className="w-full bg-rose-600 hover:bg-rose-700" onClick={handleReject} disabled={rejectPayment.isPending}>
+              {rejectPayment.isPending ? "A rejeitar..." : "Confirmar Rejeicao"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

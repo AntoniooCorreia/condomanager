@@ -145,6 +145,39 @@ export function useCreatePayment() {
   });
 }
 
+export function useSubmitPaymentProof() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, paymentMethod, proofUrl }: { id: number; paymentMethod: string; proofUrl: string }) => {
+      const res = await apiRequest("POST", "/api/payments?action=submit-proof", { id, paymentMethod, proofUrl });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
+  });
+}
+
+export function useApprovePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, approvedBy }: { id: number; approvedBy?: number }) => {
+      const res = await apiRequest("POST", "/api/payments?action=approve", { id, approvedBy });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
+  });
+}
+
+export function useRejectPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: number; reason?: string }) => {
+      const res = await apiRequest("POST", "/api/payments?action=reject", { id, reason });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.payments.list.path] }),
+  });
+}
+
 export function useDeletePayment() {
   const queryClient = useQueryClient();
   return useMutation({

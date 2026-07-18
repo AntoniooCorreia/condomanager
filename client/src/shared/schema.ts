@@ -1,4 +1,4 @@
-﻿import { pgTable, text, serial, integer, timestamp, numeric, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, numeric, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -21,7 +21,14 @@ export const payments = pgTable("payments", {
   amount: numeric("amount").notNull(),
   status: text("status").notNull(),
   dueDate: timestamp("due_date").notNull(),
+  paidDate: timestamp("paid_date"),
   description: text("description").notNull(),
+  paymentMethod: text("payment_method"),
+  proofUrl: text("proof_url"),
+  submittedAt: timestamp("submitted_at"),
+  approvedBy: integer("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
 });
 
 export const works = pgTable("works", {

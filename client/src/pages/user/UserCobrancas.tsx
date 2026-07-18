@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useUsers, usePayments, useCreatePayment, useUpdatePayment, usePaymentSchedules, useCreatePaymentSchedule, useDeletePaymentSchedule } from "@/hooks/use-condominium";
+import { useUsers, usePayments, useCreatePayment, useUpdatePayment, usePaymentSchedules, useCreatePaymentSchedule, useDeletePaymentSchedule, useApprovePayment, useRejectPayment } from "@/hooks/use-condominium";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPaymentSchema, insertPaymentScheduleSchema, type InsertPayment, type InsertPaymentSchedule } from "@/shared/schema";
+import { insertPaymentSchema, insertPaymentScheduleSchema, type InsertPayment, type InsertPaymentSchedule, type Payment } from "@/shared/schema";
 import { format, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -16,7 +17,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SendIcon, RepeatIcon, Trash2, CheckCircle2, Clock, AlertCircle, Users, Euro, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { SendIcon, RepeatIcon, Trash2, CheckCircle2, Clock, AlertCircle, Users, Euro, Plus, ChevronDown, ChevronUp, ExternalLink, XCircle, ShieldCheck } from "lucide-react";
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  mbway: "MBWay",
+  transferencia: "Transferencia Bancaria (NIB)",
+  dinheiro: "Dinheiro",
+  cheque: "Cheque",
+  outro: "Outro",
+};
 
 export function UserCobrancas() {
   const { user } = useAuth();
@@ -26,14 +35,20 @@ export function UserCobrancas() {
   const createPayment = useCreatePayment();
   const createSchedule = useCreatePaymentSchedule();
   const deleteSchedule = useDeletePaymentSchedule();
+  const approvePayment = useApprovePayment();
+  const rejectPayment = useRejectPayment();
   const { toast } = useToast();
 
   const [dialog, setDialog] = useState<"single" | "recurring" | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [rejectingPayment, setRejectingPayment] = useState<Payment | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const myTenants = users?.filter(u => Number(u.relatedCondominoId) === user?.id) || [];
   const mySchedules = schedules?.filter(s => s.condominoId === user?.id) || [];
+  const myTenantIds = myTenants.map(t => t.id);
+  const awaitingApproval = (payments || []).filter(p => myTenantIds.includes(p.userId) && p.status === "aguarda_aprovacao");
 
   const tenantPayments = (tenantId: number) => (payments || []).filter(p => p.userId === tenantId);
 
@@ -70,9 +85,30 @@ export function UserCobrancas() {
     deleteSchedule.mutate(id, { onSuccess: () => toast({ title: "Agendamento removido" }) });
   };
 
+  const handleApprove = (id: number) => {
+    approvePayment.mutate({ id, approvedBy: user?.id }, {
+      onSuccess: () => toast({ title: "Pagamento aprovado com sucesso." }),
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel aprovar.", variant: "destructive" }),
+    });
+  };
+
+  const handleReject = () => {
+    if (!rejectingPayment) return;
+    rejectPayment.mutate({ id: rejectingPayment.id, reason: rejectReason }, {
+      onSuccess: () => {
+        toast({ title: "Comprovativo rejeitado", description: "O arrendatario tera de reenviar." });
+        setRejectingPayment(null);
+        setRejectReason("");
+      },
+      onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel rejeitar.", variant: "destructive" }),
+    });
+  };
+
   const getStatusBadge = (status: string, dueDate: string | Date) => {
     const overdue = status === "pending" && isBefore(new Date(dueDate), new Date());
     if (status === "paid") return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"><CheckCircle2 className="w-3 h-3 mr-1" />Pago</Badge>;
+    if (status === "aguarda_aprovacao") return <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs"><Clock className="w-3 h-3 mr-1" />Aguarda Aprovacao</Badge>;
+    if (status === "rejeitado") return <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-xs"><XCircle className="w-3 h-3 mr-1" />Rejeitado</Badge>;
     if (overdue) return <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-xs"><AlertCircle className="w-3 h-3 mr-1" />Em Atraso</Badge>;
     return <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-xs"><Clock className="w-3 h-3 mr-1" />Pendente</Badge>;
   };
@@ -109,6 +145,44 @@ export function UserCobrancas() {
           </div>
         </div>
       </div>
+
+      {awaitingApproval.length > 0 && (
+        <Card className="border-2 border-blue-200 bg-blue-50/40 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600"><ShieldCheck className="w-4 h-4" /></div>
+            <h3 className="font-bold text-blue-800">Comprovativos por Aprovar ({awaitingApproval.length})</h3>
+          </div>
+          <div className="space-y-3">
+            {awaitingApproval.map(p => {
+              const tenant = users?.find(u => u.id === p.userId);
+              return (
+                <Card key={p.id} className="p-4 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="font-bold text-sm">{p.description} — {tenant?.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {p.paymentMethod ? PAYMENT_METHOD_LABELS[p.paymentMethod] || p.paymentMethod : ""} · Enviado a {p.submittedAt ? format(new Date(p.submittedAt), "dd MMM yyyy, HH:mm", { locale: ptBR }) : "-"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <span className="font-bold">€{p.amount}</span>
+                    {p.proofUrl && (
+                      <a href={p.proofUrl} target="_blank" rel="noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
+                        <ExternalLink className="w-3.5 h-3.5" /> Ver
+                      </a>
+                    )}
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleApprove(p.id)} disabled={approvePayment.isPending}>
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aprovar
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => { setRejectingPayment(p); setRejectReason(""); }}>
+                      <XCircle className="w-3.5 h-3.5 mr-1" /> Rejeitar
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Tabs defaultValue="arrendatarios">
         <TabsList className="mb-6">
@@ -277,6 +351,22 @@ export function UserCobrancas() {
               <Button type="submit" className="w-full" disabled={createSchedule.isPending}>{createSchedule.isPending ? "A criar..." : "Criar Agendamento"}</Button>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!rejectingPayment} onOpenChange={(o) => !o && setRejectingPayment(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-rose-600"><XCircle className="w-5 h-5" /> Rejeitar Comprovativo</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-2">Pagamento: <strong>{rejectingPayment?.description}</strong></p>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Motivo (opcional)</label>
+              <Textarea placeholder="Ex: Comprovativo ilegivel, valor nao corresponde, etc." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+            </div>
+            <Button className="w-full bg-rose-600 hover:bg-rose-700" onClick={handleReject} disabled={rejectPayment.isPending}>
+              {rejectPayment.isPending ? "A rejeitar..." : "Confirmar Rejeicao"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
