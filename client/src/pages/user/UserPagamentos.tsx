@@ -52,23 +52,23 @@ export function UserPagamentos() {
   const [proofUploading, setProofUploading] = useState(false);
   const proofInputRef = useRef<HTMLInputElement>(null);
 
-  const isProprietÃ¡rio = user?.userType === "ProprietÃ¡rio" || user?.userType === "administrador";
-  const isArrendatÃ¡rio = user?.userType === "ArrendatÃ¡rio";
+  const isProprietário = user?.userType === "Proprietário" || user?.userType === "administrador";
+  const isArrendatário = user?.userType === "Arrendatário";
 
   const myPayments = payments?.filter(p => p.userId === user?.id) || [];
-  const myTenants = users?.filter(u => u.relatedProprietÃ¡rioId === user?.id) || [];
+  const myTenants = users?.filter(u => u.relatedProprietárioId === user?.id) || [];
   const tenantPayments = (tenantId: number) => payments?.filter(p => p.userId === tenantId) || [];
 
-  // DÃ­vidas: pagamentos pendentes ou rejeitados (tÃªm de ser pagos/reenviados) separados por em atraso / a vencer
+  // Dívidas: pagamentos pendentes ou rejeitados (têm de ser pagos/reenviados) separados por em atraso / a vencer
   const actionablePayments = myPayments.filter(p => p.status === "pending" || p.status === "rejeitado");
   const overduePayments = actionablePayments.filter(p => p.status === "pending" && isBefore(new Date(p.dueDate), new Date()));
   const upcomingPayments = actionablePayments.filter(p => !(p.status === "pending" && isBefore(new Date(p.dueDate), new Date())));
   const awaitingApprovalPayments = myPayments.filter(p => p.status === "aguarda_aprovacao");
 
-  // Agendamentos mensais que afetam este arrendatÃ¡rio
+  // Agendamentos mensais que afetam este arrendatário
   const mySchedules = schedules?.filter(s => s.tenantId === user?.id && s.active) || [];
 
-  // Calcular prÃ³ximas datas dos agendamentos (prÃ³ximos 3 meses)
+  // Calcular próximas datas dos agendamentos (próximos 3 meses)
   const scheduledItems = mySchedules.flatMap(s => {
     const items = [];
     const today = new Date();
@@ -154,15 +154,15 @@ export function UserPagamentos() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-display font-bold">Pagamentos</h1>
-        <p className="text-muted-foreground mt-1">GestÃ£o de quotas e avisos de pagamento.</p>
+        <p className="text-muted-foreground mt-1">Gestão de quotas e avisos de pagamento.</p>
       </div>
 
-      <Tabs defaultValue={isArrendatÃ¡rio ? "dividas" : "meus"} className="w-full">
+      <Tabs defaultValue={isArrendatário ? "dividas" : "meus"} className="w-full">
         <TabsList className="mb-6">
-          {isArrendatÃ¡rio && (
+          {isArrendatário && (
             <TabsTrigger value="dividas" className="relative">
               <Flame className="w-4 h-4 mr-2" />
-              DÃ­vidas
+              Dívidas
               {overduePayments.length > 0 && (
                 <span className="ml-2 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                   {overduePayments.length}
@@ -171,16 +171,16 @@ export function UserPagamentos() {
             </TabsTrigger>
           )}
           <TabsTrigger value="meus">Os Meus Pagamentos</TabsTrigger>
-          {isProprietÃ¡rio && myTenants.length > 0 && (
-            <TabsTrigger value="ArrendatÃ¡rios">
+          {isProprietário && myTenants.length > 0 && (
+            <TabsTrigger value="Arrendatários">
               <Users className="w-4 h-4 mr-2" />
-              ArrendatÃ¡rios ({myTenants.length})
+              Arrendatários ({myTenants.length})
             </TabsTrigger>
           )}
         </TabsList>
 
-        {/* --- DÃ­vidas (sÃ³ arrendatÃ¡rios) --- */}
-        {isArrendatÃ¡rio && (
+        {/* --- Dívidas (só arrendatários) --- */}
+        {isArrendatário && (
           <TabsContent value="dividas" className="space-y-6">
             {/* Em atraso */}
             {overduePayments.length > 0 && (
@@ -212,7 +212,7 @@ export function UserPagamentos() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                            <p className="font-bold text-xl text-rose-700">â‚¬{p.amount}</p>
+                            <p className="font-bold text-xl text-rose-700">€{p.amount}</p>
                             <Button
                               size="sm"
                               className="bg-rose-600 hover:bg-rose-700"
@@ -258,7 +258,7 @@ export function UserPagamentos() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                            <p className="font-bold text-xl">â‚¬{p.amount}</p>
+                            <p className="font-bold text-xl">€{p.amount}</p>
                             <Button
                               size="sm"
                               variant="outline"
@@ -274,24 +274,24 @@ export function UserPagamentos() {
               </div>
             )}
 
-            {/* Aguarda aprovaÃ§Ã£o */}
+            {/* Aguarda aprovação */}
             {awaitingApprovalPayments.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
                     <Clock className="w-4 h-4" />
                   </div>
-                  <h3 className="font-bold text-blue-700">Aguarda AprovaÃ§Ã£o ({awaitingApprovalPayments.length})</h3>
+                  <h3 className="font-bold text-blue-700">Aguarda Aprovação ({awaitingApprovalPayments.length})</h3>
                 </div>
                 <div className="space-y-3">
                   {awaitingApprovalPayments.map(p => (
                     <Card key={p.id} className="p-4 border-blue-200 bg-blue-50/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
                         <p className="font-bold">{p.description}</p>
-                        <p className="text-sm text-muted-foreground">Comprovativo enviado, a aguardar aprovaÃ§Ã£o manual.</p>
+                        <p className="text-sm text-muted-foreground">Comprovativo enviado, a aguardar aprovação manual.</p>
                       </div>
                       <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                        <p className="font-bold text-xl">â‚¬{p.amount}</p>
+                        <p className="font-bold text-xl">€{p.amount}</p>
                         {p.proofUrl && (
                           <a href={p.proofUrl} target="_blank" rel="noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
                             <ExternalLink className="w-3.5 h-3.5" /> Ver comprovativo
@@ -307,19 +307,19 @@ export function UserPagamentos() {
             {overduePayments.length === 0 && upcomingPayments.length === 0 && scheduledItems.length === 0 && awaitingApprovalPayments.length === 0 && (
               <Card className="p-10 text-center border-dashed">
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                <p className="font-bold text-lg">Sem dÃ­vidas!</p>
-                <p className="text-muted-foreground text-sm mt-1">EstÃ¡ em dia com todos os pagamentos.</p>
+                <p className="font-bold text-lg">Sem dívidas!</p>
+                <p className="text-muted-foreground text-sm mt-1">Está em dia com todos os pagamentos.</p>
               </Card>
             )}
 
-            {/* Agendamentos futuros (previsÃ£o) */}
+            {/* Agendamentos futuros (previsão) */}
             {scheduledItems.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
                     <RepeatIcon className="w-4 h-4" />
                   </div>
-                  <h3 className="font-bold text-blue-700">PrÃ³ximos Pagamentos Agendados</h3>
+                  <h3 className="font-bold text-blue-700">Próximos Pagamentos Agendados</h3>
                 </div>
                 <div className="space-y-2">
                   {scheduledItems
@@ -336,7 +336,7 @@ export function UserPagamentos() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-sm">â‚¬{item.amount}</p>
+                          <p className="font-bold text-sm">€{item.amount}</p>
                           <Badge className="text-xs bg-blue-50 text-blue-600 border-blue-200">Agendado</Badge>
                         </div>
                       </Card>
@@ -353,7 +353,7 @@ export function UserPagamentos() {
             <Card className="p-10 text-center border-dashed border-border/70">
               <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
               <p className="font-bold text-lg">Sem pagamentos registados</p>
-              <p className="text-muted-foreground text-sm mt-1">NÃ£o tem avisos de pagamento.</p>
+              <p className="text-muted-foreground text-sm mt-1">Não tem avisos de pagamento.</p>
             </Card>
           ) : (
             <>
@@ -370,7 +370,7 @@ export function UserPagamentos() {
                             {isRejected ? <XCircle className="w-3 h-3" /> : isOverdue ? <AlertCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                             {isRejected ? "Rejeitado" : isOverdue ? "Em Atraso" : "A Pagamento"}
                           </Badge>
-                          <h3 className="text-2xl font-bold mb-1">â‚¬{p.amount}</h3>
+                          <h3 className="text-2xl font-bold mb-1">€{p.amount}</h3>
                           <p className="font-medium text-foreground/80 mb-1">{p.description}</p>
                           <p className="text-sm text-muted-foreground mb-2">Vence: {format(new Date(p.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}</p>
                           {isRejected && p.rejectionReason && (
@@ -378,8 +378,8 @@ export function UserPagamentos() {
                           )}
                           <div className="space-y-2 mb-6 bg-white/70 p-3 rounded-lg border border-border/50 text-sm">
                             <div className="flex justify-between"><span className="text-muted-foreground">Entidade:</span><span className="font-mono font-bold">12345</span></div>
-                            <div className="flex justify-between"><span className="text-muted-foreground">ReferÃªncia:</span><span className="font-mono font-bold">123 456 789</span></div>
-                            <div className="flex justify-between"><span className="text-muted-foreground">Valor:</span><span className="font-mono font-bold">â‚¬{p.amount}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Referência:</span><span className="font-mono font-bold">123 456 789</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Valor:</span><span className="font-mono font-bold">€{p.amount}</span></div>
                           </div>
                           <Button className={`w-full ${isOverdue || isRejected ? "bg-rose-600 hover:bg-rose-700" : "bg-amber-600 hover:bg-amber-700"}`} onClick={() => openPayDialog(p)}>
                             {isRejected ? "Reenviar Comprovativo" : "Enviar Comprovativo"}
@@ -395,11 +395,11 @@ export function UserPagamentos() {
                   {myPayments.filter(p => p.status === "aguarda_aprovacao").map(p => (
                     <Card key={p.id} className="p-6 border-2 border-blue-200 bg-blue-50/30">
                       <Badge variant="outline" className="mb-4 inline-flex items-center gap-1 bg-blue-100 text-blue-700 border-blue-200">
-                        <Clock className="w-3 h-3" /> Aguarda AprovaÃ§Ã£o
+                        <Clock className="w-3 h-3" /> Aguarda Aprovação
                       </Badge>
-                      <h3 className="text-2xl font-bold mb-1">â‚¬{p.amount}</h3>
+                      <h3 className="text-2xl font-bold mb-1">€{p.amount}</h3>
                       <p className="font-medium text-foreground/80 mb-1">{p.description}</p>
-                      <p className="text-sm text-muted-foreground mb-4">Comprovativo enviado, a aguardar aprovaÃ§Ã£o manual.</p>
+                      <p className="text-sm text-muted-foreground mb-4">Comprovativo enviado, a aguardar aprovação manual.</p>
                       {p.proofUrl && (
                         <a href={p.proofUrl} target="_blank" rel="noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
                           <ExternalLink className="w-3.5 h-3.5" /> Ver comprovativo enviado
@@ -411,7 +411,7 @@ export function UserPagamentos() {
               )}
               {myPayments.filter(p => p.status === "paid").length > 0 && (
                 <>
-                  <h3 className="text-xl font-bold font-display mb-4">HistÃ³rico</h3>
+                  <h3 className="text-xl font-bold font-display mb-4">Histórico</h3>
                   <div className="space-y-3">
                     {myPayments.filter(p => p.status === "paid").map(p => (
                       <Card key={p.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-secondary/20 transition-colors">
@@ -425,10 +425,18 @@ export function UserPagamentos() {
                           </div>
                         </div>
                         <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                          <p className="font-bold text-lg">â‚¬{p.amount}</p>
-                          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
-                            <Download className="w-4 h-4 mr-2" /> Fatura
-                          </Button>
+                          <p className="font-bold text-lg">€{p.amount}</p>
+                          {p.proofUrl ? (
+                            <a href={p.proofUrl} target="_blank" rel="noreferrer">
+                              <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
+                                <Download className="w-4 h-4 mr-2" /> Fatura
+                              </Button>
+                            </a>
+                          ) : (
+                            <Button variant="ghost" size="sm" className="text-muted-foreground" disabled>
+                              <Download className="w-4 h-4 mr-2" /> Fatura
+                            </Button>
+                          )}
                         </div>
                       </Card>
                     ))}
@@ -439,11 +447,11 @@ export function UserPagamentos() {
           )}
         </TabsContent>
 
-        {/* --- ArrendatÃ¡rios (ProprietÃ¡rios) --- */}
-        {isProprietÃ¡rio && myTenants.length > 0 && (
-          <TabsContent value="ArrendatÃ¡rios" className="space-y-6">
+        {/* --- Arrendatários (Proprietários) --- */}
+        {isProprietário && myTenants.length > 0 && (
+          <TabsContent value="Arrendatários" className="space-y-6">
             <div className="flex justify-between items-center">
-              <p className="text-muted-foreground text-sm">Acompanhe e crie avisos para os seus arrendatÃ¡rios.</p>
+              <p className="text-muted-foreground text-sm">Acompanhe e crie avisos para os seus arrendatários.</p>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="w-4 h-4 mr-2" /> Novo Aviso</Button>
@@ -454,7 +462,7 @@ export function UserPagamentos() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField control={form.control} name="userId" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>ArrendatÃ¡rio</FormLabel>
+                          <FormLabel>Arrendatário</FormLabel>
                           <Select onValueChange={(v) => field.onChange(parseInt(v))}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                             <SelectContent>{myTenants.map(t => <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>)}</SelectContent>
@@ -463,10 +471,10 @@ export function UserPagamentos() {
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem><FormLabel>DescriÃ§Ã£o</FormLabel><FormControl><Input placeholder="Ex: Renda Mensal - Junho" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Descrição</FormLabel><FormControl><Input placeholder="Ex: Renda Mensal - Junho" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                       <FormField control={form.control} name="amount" render={({ field }) => (
-                        <FormItem><FormLabel>Valor (â‚¬)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Valor (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                       <FormField control={form.control} name="dueDate" render={({ field }) => (
                         <FormItem><FormLabel>Data Limite</FormLabel><FormControl><Input type="date" onChange={(e) => field.onChange(new Date(e.target.value))} /></FormControl><FormMessage /></FormItem>
@@ -490,7 +498,7 @@ export function UserPagamentos() {
                       <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">{tenant.name.charAt(0)}</div>
                       <div>
                         <p className="font-bold text-sm">{tenant.name}</p>
-                        <p className="text-xs text-muted-foreground">FraÃ§Ã£o {tenant.unit}</p>
+                        <p className="text-xs text-muted-foreground">Fração {tenant.unit}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -509,7 +517,7 @@ export function UserPagamentos() {
                             <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(p.dueDate), "dd 'de' MMM, yyyy", { locale: ptBR })}</p>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-bold">â‚¬{p.amount}</span>
+                            <span className="font-bold">€{p.amount}</span>
                             {getStatusBadge(p.status, p.dueDate)}
                           </div>
                         </div>
@@ -531,13 +539,13 @@ export function UserPagamentos() {
             <div className="space-y-4 pt-2">
               <div className="bg-secondary/40 p-3 rounded-lg text-sm">
                 <p className="font-bold">{payDialogPayment.description}</p>
-                <p className="text-muted-foreground">Valor: <span className="font-bold text-foreground">â‚¬{payDialogPayment.amount}</span></p>
+                <p className="text-muted-foreground">Valor: <span className="font-bold text-foreground">€{payDialogPayment.amount}</span></p>
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">MÃ©todo de Pagamento</label>
+                <label className="text-sm font-medium mb-1.5 block">Método de Pagamento</label>
                 <Select value={proofMethod} onValueChange={setProofMethod}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o mÃ©todo" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione o método" /></SelectTrigger>
                   <SelectContent>
                     {PAYMENT_METHODS.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
                   </SelectContent>
@@ -546,7 +554,7 @@ export function UserPagamentos() {
 
               {proofMethod === "mbway" && (
                 <div className="bg-white/70 p-3 rounded-lg border border-border/50 text-sm space-y-1">
-                  <p className="text-muted-foreground">Envie o valor por MBWay para o nÃºmero:</p>
+                  <p className="text-muted-foreground">Envie o valor por MBWay para o número:</p>
                   <p className="font-mono font-bold">912 345 678</p>
                 </div>
               )}
@@ -574,7 +582,7 @@ export function UserPagamentos() {
               <Button className="w-full" onClick={handleSubmitProof} disabled={submitProof.isPending || proofUploading || !proofUrl || !proofMethod}>
                 {submitProof.isPending ? "A enviar..." : "Enviar Comprovativo"}
               </Button>
-              <p className="text-xs text-muted-foreground text-center">O pagamento sÃ³ Ã© confirmado depois de aprovaÃ§Ã£o manual.</p>
+              <p className="text-xs text-muted-foreground text-center">O pagamento só é confirmado depois de aprovação manual.</p>
             </div>
           )}
         </DialogContent>
