@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Clock, Plus, Trash2, Download, FileSpreadsheet, FileText, XCircle, ExternalLink, ShieldCheck } from "lucide-react";
+import { generateInvoicePDF } from "@/lib/invoice";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -102,6 +103,12 @@ export function Financeiro() {
       },
       onError: (err: any) => toast({ title: "Erro", description: err?.message || "Nao foi possivel rejeitar.", variant: "destructive" }),
     });
+  };
+
+  const handleDownloadInvoice = (payment: Payment) => {
+    const payer = users?.find(u => u.id === payment.userId);
+    const approver = users?.find(u => u.id === payment.approvedBy);
+    generateInvoicePDF(payment, payer, approver);
   };
 
   const handleDelete = (id: number) => {
@@ -474,15 +481,26 @@ export function Financeiro() {
                         <TableCell className="font-bold">€{payment.amount}</TableCell>
                         <TableCell>{getStatusBadge(payment.status)}</TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
-                            onClick={() => handleDelete(payment.id)}
-                            disabled={deletePayment.isPending}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-primary hover:bg-primary/10"
+                              onClick={() => handleDownloadInvoice(payment)}
+                              title="Descarregar fatura"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                              onClick={() => handleDelete(payment.id)}
+                              disabled={deletePayment.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

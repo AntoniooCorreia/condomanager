@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SendIcon, RepeatIcon, Trash2, CheckCircle2, Clock, AlertCircle, Users, Euro, Plus, ChevronDown, ChevronUp, ExternalLink, XCircle, ShieldCheck } from "lucide-react";
+import { SendIcon, RepeatIcon, Trash2, CheckCircle2, Clock, AlertCircle, Users, Euro, Plus, ChevronDown, ChevronUp, ExternalLink, XCircle, ShieldCheck, Download } from "lucide-react";
+import { generateInvoicePDF } from "@/lib/invoice";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   mbway: "MBWay",
@@ -83,6 +84,12 @@ export function UserCobrancas() {
 
   const handleDelete = (id: number) => {
     deleteSchedule.mutate(id, { onSuccess: () => toast({ title: "Agendamento removido" }) });
+  };
+
+  const handleDownloadInvoice = (payment: Payment) => {
+    const payer = users?.find(u => u.id === payment.userId);
+    const approver = users?.find(u => u.id === payment.approvedBy);
+    generateInvoicePDF(payment, payer, approver);
   };
 
   const handleApprove = (id: number) => {
@@ -239,6 +246,11 @@ export function UserCobrancas() {
                             <div className="flex items-center gap-3">
                               <span className="font-bold text-sm">EUR {Number(p.amount).toFixed(2)}</span>
                               {getStatusBadge(p.status, p.dueDate)}
+                              {p.status === "paid" && (
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-primary hover:bg-primary/10" onClick={() => handleDownloadInvoice(p)} title="Descarregar fatura">
+                                  <Download className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                         );

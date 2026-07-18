@@ -27,7 +27,7 @@ export function AppSidebar() {
     { title: "Financeiro", url: "/admin/financeiro", icon: CreditCard },
     { title: "Obras", url: "/admin/obras", icon: HardHat },
     { title: "Reservas", url: "/admin/reservas", icon: Calendar },
-    { title: "Seguranca", url: "/admin/seguranca", icon: ShieldAlert },
+    { title: "Ocorrencias", url: "/admin/seguranca", icon: ShieldAlert },
     { title: "Cameras CCTV", url: "/admin/camaras", icon: Camera },
     { title: "Quadro de Avisos", url: "/admin/avisos", icon: Megaphone },
     { title: "Assembleias", url: "/admin/assembleias", icon: Vote },
@@ -53,6 +53,7 @@ export function AppSidebar() {
   const arrendatarioLinks = [
     { title: "Pagamentos", url: "/user/pagamentos", icon: CreditCard },
     { title: "Reservar Areas", url: "/user/reservar", icon: Calendar },
+    { title: "Ocorrencias", url: "/user/seguranca", icon: ShieldAlert },
     { title: "Quadro de Avisos", url: "/user/avisos", icon: Megaphone },
     { title: "Meu Perfil", url: "/user/perfil", icon: UserCircle },
   ];

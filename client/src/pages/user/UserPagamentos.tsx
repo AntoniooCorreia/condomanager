@@ -22,6 +22,7 @@ import { insertPaymentSchema, type InsertPayment, type Payment } from "@/shared/
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
+import { generateInvoicePDF } from "@/lib/invoice";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -95,6 +96,12 @@ export function UserPagamentos() {
         form.reset();
       },
     });
+  };
+
+  const handleDownloadInvoice = (payment: Payment) => {
+    const payer = users?.find(u => u.id === payment.userId);
+    const approver = users?.find(u => u.id === payment.approvedBy);
+    generateInvoicePDF(payment, payer, approver);
   };
 
   const openPayDialog = (payment: Payment) => {
@@ -274,6 +281,39 @@ export function UserPagamentos() {
               </div>
             )}
 
+            {/* Agendamentos futuros (previsão) */}
+            {scheduledItems.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
+                    <RepeatIcon className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-blue-700">Próximos Pagamentos Agendados</h3>
+                </div>
+                <div className="space-y-2">
+                  {scheduledItems
+                    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+                    .map((item, i) => (
+                      <Card key={i} className="p-3 flex items-center justify-between border-blue-100 bg-blue-50/20">
+                        <div className="flex items-center gap-3">
+                          <RepeatIcon className="w-4 h-4 text-blue-500" />
+                          <div>
+                            <p className="font-medium text-sm">{item.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(item.dueDate, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-sm">€{item.amount}</p>
+                          <Badge className="text-xs bg-blue-50 text-blue-600 border-blue-200">Agendado</Badge>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+
             {/* Aguarda aprovação */}
             {awaitingApprovalPayments.length > 0 && (
               <div>
@@ -310,39 +350,6 @@ export function UserPagamentos() {
                 <p className="font-bold text-lg">Sem dívidas!</p>
                 <p className="text-muted-foreground text-sm mt-1">Está em dia com todos os pagamentos.</p>
               </Card>
-            )}
-
-            {/* Agendamentos futuros (previsão) */}
-            {scheduledItems.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
-                    <RepeatIcon className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-bold text-blue-700">Próximos Pagamentos Agendados</h3>
-                </div>
-                <div className="space-y-2">
-                  {scheduledItems
-                    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
-                    .map((item, i) => (
-                      <Card key={i} className="p-3 flex items-center justify-between border-blue-100 bg-blue-50/20">
-                        <div className="flex items-center gap-3">
-                          <RepeatIcon className="w-4 h-4 text-blue-500" />
-                          <div>
-                            <p className="font-medium text-sm">{item.description}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(item.dueDate, "dd 'de' MMMM, yyyy", { locale: ptBR })}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm">€{item.amount}</p>
-                          <Badge className="text-xs bg-blue-50 text-blue-600 border-blue-200">Agendado</Badge>
-                        </div>
-                      </Card>
-                    ))}
-                </div>
-              </div>
             )}
           </TabsContent>
         )}
@@ -426,17 +433,9 @@ export function UserPagamentos() {
                         </div>
                         <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
                           <p className="font-bold text-lg">€{p.amount}</p>
-                          {p.proofUrl ? (
-                            <a href={p.proofUrl} target="_blank" rel="noreferrer">
-                              <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
-                                <Download className="w-4 h-4 mr-2" /> Fatura
-                              </Button>
-                            </a>
-                          ) : (
-                            <Button variant="ghost" size="sm" className="text-muted-foreground" disabled>
-                              <Download className="w-4 h-4 mr-2" /> Fatura
-                            </Button>
-                          )}
+                          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10" onClick={() => handleDownloadInvoice(p)}>
+                            <Download className="w-4 h-4 mr-2" /> Fatura
+                          </Button>
                         </div>
                       </Card>
                     ))}
