@@ -30,6 +30,17 @@ const users = pgTable("users", {
   role: text("role").notNull().default("user"),
 });
 
+const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull(),
+  receiverId: integer("receiver_id").notNull(),
+  content: text("content").notNull(),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+const SISTEMA_ID = 14;
+
 const paymentSchedules = pgTable("payment_schedules", {
   id: serial("id").primaryKey(),
   condominoId: integer("condomino_id").notNull(),
@@ -41,7 +52,7 @@ const paymentSchedules = pgTable("payment_schedules", {
   startDate: timestamp("start_date").notNull().defaultNow(),
 });
 
-const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { payments, paymentSchedules, users } });
+const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), { schema: { payments, paymentSchedules, users, messages } });
 
 const PAYMENT_METHODS = ["mbway", "transferencia", "dinheiro", "cheque", "outro"];
 
@@ -68,6 +79,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       approvedAt: null,
     }).where(eq(payments.id, bodyId)).returning();
     if (!updated) return res.status(404).json({ message: "Pagamento nao encontrado." });
+
+    // Notifica quem tem de aprovar: o condomino (se for renda de arrendatario) ou os administradores (se for quota de condomino)
+    try {
+      const [payer] = await db.select().from(users).where(eq(users.id, updated.userId));
+      if (payer) {
+        const text = `Novo comprovativo de pagamento de ${payer.name}: "${updated.description}" (EUR ${updated.amount}) aguarda a sua aprovacao.`;
+        let recipientIds: number[] = [];
+        if (payer.userType === "arrendatario" && payer.relatedCondominoId) {
+          recipientIds = [payer.relatedCondominoId];
+        } else {
+          const admins = await db.select().from(users).where(eq(users.role, "admin"));
+          recipientIds = admins.map(a => a.id);
+        }
+        for (const receiverId of recipientIds) {
+          await db.insert(messages).values({ senderId: SISTEMA_ID, receiverId, content: text });
+        }
+      }
+    } catch (e) {}
+
     return res.status(200).json(updated);
   }
 
@@ -88,6 +118,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       approvedAt: new Date(),
       rejectionReason: null,
     }).where(eq(payments.id, bodyId)).returning();
+
+    try {
+      await db.insert(messages).values({
+        senderId: SISTEMA_ID,
+        receiverId: updated.userId,
+        content: `O seu pagamento "${updated.description}" (EUR ${updated.amount}) foi aprovado.`,
+      });
+    } catch (e) {}
+
     return res.status(200).json(updated);
   }
 
@@ -103,6 +142,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       approvedAt: null,
     }).where(eq(payments.id, bodyId)).returning();
     if (!updated) return res.status(404).json({ message: "Pagamento nao encontrado." });
+
+    try {
+      await db.insert(messages).values({
+        senderId: SISTEMA_ID,
+        receiverId: updated.userId,
+        content: `O comprovativo de "${updated.description}" foi rejeitado${reason ? ": " + reason : "."} Reenvie um novo comprovativo.`,
+      });
+    } catch (e) {}
+
     return res.status(200).json(updated);
   }
 
