@@ -43,9 +43,7 @@ export function Seguranca() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role === "admin";
 
-  const filteredLogs = isAdmin
-    ? logs
-    : logs?.filter(l => l.reportedBy === user?.id) || [];
+  const filteredLogs = logs || [];
 
   const form = useForm<InsertSecurityLog>({
     resolver: zodResolver(reportSchema),
@@ -183,7 +181,7 @@ export function Seguranca() {
       <div className="space-y-4">
         {isLoading ? <p>A carregar...</p> : filteredLogs?.length === 0 ? (
           <Card className="p-8 text-center border-border/50">
-            <p className="text-muted-foreground font-medium">{isAdmin ? "Nenhuma ocorrencia registada." : "Nao tem ocorrencias reportadas."}</p>
+            <p className="text-muted-foreground font-medium">Nenhuma ocorrencia registada.</p>
           </Card>
         ) : filteredLogs?.map((log, i) => {
           const reporter = users?.find(u => u.id === log.reportedBy);
